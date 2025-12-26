@@ -10,17 +10,19 @@ import {
   MessageSquare,
   Target,
   Zap,
-  ThumbsUp
+  ThumbsUp,
+  AlertCircle
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Post, BrandProfile } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostsViewProps {
   brandProfile: BrandProfile;
@@ -35,65 +37,84 @@ const LENGTH_OPTIONS = [
   { value: 'long', label: 'Long', description: '> 1200 car.' },
 ] as const;
 
-const MOCK_POST: Post = {
-  id: '1',
-  brandProfileId: '1',
-  content: `🚀 L'IA ne remplace pas les créatifs, elle les augmente.
-
-Après 6 mois à utiliser l'IA dans notre workflow :
-
-→ Temps de recherche : -60%
-→ Première version : 3x plus rapide
-→ Qualité finale : identique (voire meilleure)
-
-Le secret ? L'IA gère le "grunt work", nous on se concentre sur la stratégie et l'émotion.
-
-Ceux qui résistent perdent du temps.
-Ceux qui adoptent gagnent un avantage compétitif.
-
-Vous utilisez l'IA dans votre création de contenu ?
-
-#ContentMarketing #IA #Productivité`,
-  variants: [
-    `💡 Le mythe du "tout automatisé" par l'IA...`,
-    `Confession : j'étais sceptique sur l'IA pour le contenu...`,
-  ],
-  suggestions: [
-    "Ajouter une question ouverte en fin de post",
-    "Raccourcir le premier paragraphe pour un meilleur hook",
-  ],
-  readabilityScore: 87,
-  editorialJustification: "Ce post aligne expertise technique et ton accessible. Le format liste améliore la lisibilité mobile.",
-  length: 'medium',
-  tone: 'expert',
-  cta: "Question ouverte pour engagement",
-  keywords: ['IA', 'productivité', 'content'],
-  hashtags: ['ContentMarketing', 'IA', 'Productivité'],
-  status: 'ready',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
 export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: PostsViewProps) {
   const { toast } = useToast();
-  const [currentPost, setCurrentPost] = useState<Post>(MOCK_POST);
+  const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [selectedLength, setSelectedLength] = useState<Post['length']>('medium');
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [topic, setTopic] = useState("");
+  const [includeCta, setIncludeCta] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
+    if (!topic.trim()) return;
+    
     setIsGenerating(true);
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsGenerating(false);
-    toast({
-      title: "Post généré !",
-      description: "Votre nouveau post est prêt à être optimisé.",
-    });
+    setError(null);
+    
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('generate-post', {
+        body: {
+          topic,
+          length: selectedLength,
+          brandProfile: {
+            companyName: brandProfile.companyName,
+            sector: brandProfile.sector,
+            tone: brandProfile.tone,
+            values: brandProfile.values,
+            forbiddenWords: brandProfile.forbiddenWords,
+            targets: brandProfile.targets,
+            businessObjectives: brandProfile.businessObjectives,
+          },
+          includeCta,
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (data.error) throw new Error(data.error);
+
+      const newPost: Post = {
+        id: crypto.randomUUID(),
+        brandProfileId: brandProfile.id,
+        content: data.content || '',
+        variants: data.variants || [],
+        suggestions: data.suggestions || [],
+        readabilityScore: data.readabilityScore || 75,
+        editorialJustification: data.editorialJustification || '',
+        length: selectedLength,
+        tone: brandProfile.tone,
+        cta: includeCta ? "CTA inclus" : undefined,
+        keywords: data.keywords || [],
+        hashtags: data.hashtags || [],
+        status: 'draft',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      setCurrentPost(newPost);
+      onAddPost(newPost);
+      
+      toast({
+        title: "Post généré !",
+        description: "Votre nouveau post est prêt à être optimisé.",
+      });
+    } catch (err: unknown) {
+      console.error("Generation error:", err);
+      const message = err instanceof Error ? err.message : "Erreur lors de la génération";
+      setError(message);
+      toast({
+        title: "Erreur",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopy = async () => {
+    if (!currentPost) return;
     await navigator.clipboard.writeText(currentPost.content);
     setCopied(true);
     toast({
@@ -104,13 +125,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
   };
 
   const handleRegenerate = async () => {
-    setIsGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsGenerating(false);
-    toast({
-      title: "Post régénéré",
-      description: "Une nouvelle version a été créée.",
-    });
+    await handleGenerate();
   };
 
   return (
@@ -127,7 +142,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
         </div>
         <Badge variant="info" className="px-3 py-1">
           <Zap className="w-3 h-3 mr-1" />
-          IA activée
+          IA Gemini
         </Badge>
       </div>
 
@@ -190,7 +205,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                 <Target className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm">Inclure un CTA</span>
               </div>
-              <Badge variant="success">Activé</Badge>
+              <Switch checked={includeCta} onCheckedChange={setIncludeCta} />
             </div>
 
             {/* Generate Button */}
@@ -203,7 +218,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
               {isGenerating ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Génération...
+                  Génération IA...
                 </>
               ) : (
                 <>
@@ -212,6 +227,13 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                 </>
               )}
             </Button>
+
+            {error && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -223,120 +245,143 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                 <MessageSquare className="w-5 h-5 text-primary" />
                 Aperçu du post
               </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRegenerate}
-                  disabled={isGenerating}
-                >
-                  <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
-                  Régénérer
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleCopy}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copié
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copier
-                    </>
-                  )}
-                </Button>
-              </div>
+              {currentPost && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRegenerate}
+                    disabled={isGenerating}
+                  >
+                    <RefreshCw className={cn("w-4 h-4 mr-2", isGenerating && "animate-spin")} />
+                    Régénérer
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleCopy}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Copié
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copier
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </CardHeader>
           
           <CardContent className="space-y-6">
-            {/* Post Content */}
-            <div className="p-6 rounded-xl bg-secondary/30 border border-border">
-              <Textarea
-                value={currentPost.content}
-                onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
-                className="min-h-[300px] resize-none bg-transparent border-none p-0 focus-visible:ring-0 text-foreground whitespace-pre-wrap"
-              />
-            </div>
-
-            {/* Stats Row */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-teal-50 border border-teal-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <ThumbsUp className="w-4 h-4 text-teal-600" />
-                  <span className="text-xs text-teal-600 font-medium">Score lisibilité</span>
-                </div>
-                <p className="text-2xl font-display font-bold text-teal-700">
-                  {currentPost.readabilityScore}/100
+            {!currentPost ? (
+              <div className="text-center py-16">
+                <Sparkles className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">
+                  Entrez un sujet et cliquez sur "Générer"
+                </p>
+                <p className="text-sm text-muted-foreground/70 mt-1">
+                  L'IA créera un post optimisé selon votre charte éditoriale
                 </p>
               </div>
-              
-              <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Type className="w-4 h-4 text-primary" />
-                  <span className="text-xs text-primary font-medium">Caractères</span>
+            ) : (
+              <>
+                {/* Post Content */}
+                <div className="p-6 rounded-xl bg-secondary/30 border border-border">
+                  <Textarea
+                    value={currentPost.content}
+                    onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
+                    className="min-h-[300px] resize-none bg-transparent border-none p-0 focus-visible:ring-0 text-foreground whitespace-pre-wrap"
+                  />
                 </div>
-                <p className="text-2xl font-display font-bold text-primary">
-                  {currentPost.content.length}
-                </p>
-              </div>
-              
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Hash className="w-4 h-4 text-amber-600" />
-                  <span className="text-xs text-amber-600 font-medium">Hashtags</span>
-                </div>
-                <p className="text-2xl font-display font-bold text-amber-700">
-                  {currentPost.hashtags.length}
-                </p>
-              </div>
-            </div>
 
-            {/* Suggestions */}
-            <div className="space-y-3">
-              <Label>Suggestions d'amélioration</Label>
-              {currentPost.suggestions.map((suggestion, i) => (
-                <div 
-                  key={i}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 border border-border"
-                >
-                  <Sparkles className="w-4 h-4 text-primary mt-0.5" />
-                  <p className="text-sm text-muted-foreground">{suggestion}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Editorial Justification */}
-            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-              <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
-                Justification éditoriale
-              </p>
-              <p className="text-sm text-foreground">
-                {currentPost.editorialJustification}
-              </p>
-            </div>
-
-            {/* Variants */}
-            <div className="space-y-3">
-              <Label>Variantes alternatives</Label>
-              <div className="grid grid-cols-1 gap-3">
-                {currentPost.variants.map((variant, i) => (
-                  <button
-                    key={i}
-                    className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-secondary/50 transition-all text-left group"
-                  >
-                    <p className="text-sm text-muted-foreground group-hover:text-foreground">
-                      {variant}
+                {/* Stats Row */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl bg-teal-50 border border-teal-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ThumbsUp className="w-4 h-4 text-teal-600" />
+                      <span className="text-xs text-teal-600 font-medium">Score lisibilité</span>
+                    </div>
+                    <p className="text-2xl font-display font-bold text-teal-700">
+                      {currentPost.readabilityScore}/100
                     </p>
-                  </button>
-                ))}
-              </div>
-            </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Type className="w-4 h-4 text-primary" />
+                      <span className="text-xs text-primary font-medium">Caractères</span>
+                    </div>
+                    <p className="text-2xl font-display font-bold text-primary">
+                      {currentPost.content.length}
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Hash className="w-4 h-4 text-amber-600" />
+                      <span className="text-xs text-amber-600 font-medium">Hashtags</span>
+                    </div>
+                    <p className="text-2xl font-display font-bold text-amber-700">
+                      {currentPost.hashtags.length}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Suggestions */}
+                {currentPost.suggestions.length > 0 && (
+                  <div className="space-y-3">
+                    <Label>Suggestions d'amélioration</Label>
+                    {currentPost.suggestions.map((suggestion, i) => (
+                      <div 
+                        key={i}
+                        className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 border border-border"
+                      >
+                        <Sparkles className="w-4 h-4 text-primary mt-0.5" />
+                        <p className="text-sm text-muted-foreground">{suggestion}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Editorial Justification */}
+                {currentPost.editorialJustification && (
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-xs text-primary font-medium uppercase tracking-wide mb-2">
+                      Justification éditoriale
+                    </p>
+                    <p className="text-sm text-foreground">
+                      {currentPost.editorialJustification}
+                    </p>
+                  </div>
+                )}
+
+                {/* Variants */}
+                {currentPost.variants.length > 0 && (
+                  <div className="space-y-3">
+                    <Label>Variantes alternatives</Label>
+                    <div className="grid grid-cols-1 gap-3">
+                      {currentPost.variants.map((variant, i) => (
+                        <button
+                          key={i}
+                          className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-secondary/50 transition-all text-left group"
+                          onClick={() => setCurrentPost({ ...currentPost, content: variant })}
+                        >
+                          <p className="text-sm text-muted-foreground group-hover:text-foreground">
+                            {variant}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

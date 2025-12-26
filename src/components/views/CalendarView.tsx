@@ -7,52 +7,28 @@ import {
   FileText,
   MessageSquare,
   Megaphone,
-  Heart
+  Heart,
+  Sparkles,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CalendarItem, BrandProfile } from "@/types";
+import { Label } from "@/components/ui/label";
+import { CalendarItem, BrandProfile, WatchItem } from "@/types";
 import { cn } from "@/lib/utils";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addWeeks } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAppStore } from "@/store/appStore";
 
 interface CalendarViewProps {
   brandProfile: BrandProfile;
   calendarItems: CalendarItem[];
   onAddCalendarItem: (item: CalendarItem) => void;
 }
-
-// Mock data for demonstration
-const MOCK_CALENDAR_ITEMS: CalendarItem[] = [
-  {
-    id: '1',
-    brandProfileId: '1',
-    date: new Date(2025, 11, 27),
-    theme: "Tendances IA 2025",
-    type: 'educational',
-    objective: "Positionner l'expertise",
-    status: 'scheduled',
-  },
-  {
-    id: '2',
-    brandProfileId: '1',
-    date: new Date(2025, 11, 28),
-    theme: "Mon parcours entrepreneurial",
-    type: 'storytelling',
-    objective: "Créer de la proximité",
-    status: 'draft',
-  },
-  {
-    id: '3',
-    brandProfileId: '1',
-    date: new Date(2025, 11, 30),
-    theme: "Nouveau produit",
-    type: 'promotional',
-    objective: "Générer des leads",
-    status: 'scheduled',
-  },
-];
 
 const typeIcons = {
   educational: FileText,
@@ -71,10 +47,13 @@ const typeColors = {
 };
 
 export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem }: CalendarViewProps) {
+  const { toast } = useToast();
+  const { watchItems, setCalendarItems } = useAppStore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  
-  const items = calendarItems.length > 0 ? calendarItems : MOCK_CALENDAR_ITEMS;
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<CalendarItem[]>(calendarItems);
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -85,6 +64,73 @@ export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem }:
   };
 
   const selectedItems = selectedDate ? getItemsForDate(selectedDate) : [];
+
+  const handleGenerateCalendar = async () => {
+    setIsGenerating(true);
+    setError(null);
+
+    try {
+      const watchItemsForAI = watchItems.length > 0 
+        ? watchItems.map(item => ({
+            title: item.title,
+            angle: item.angle,
+            objective: item.objective,
+          }))
+        : [
+            { title: "Tendances du secteur", angle: "Partager votre vision", objective: "credibility" },
+            { title: "Retour d'expérience", angle: "Storytelling personnel", objective: "engagement" },
+          ];
+
+      const { data, error: fnError } = await supabase.functions.invoke('generate-calendar', {
+        body: {
+          watchItems: watchItemsForAI,
+          brandProfile: {
+            companyName: brandProfile.companyName,
+            sector: brandProfile.sector,
+            tone: brandProfile.tone,
+            publishingFrequency: brandProfile.publishingFrequency,
+            businessObjectives: brandProfile.businessObjectives,
+            values: brandProfile.values,
+          },
+          startDate: format(addWeeks(new Date(), 1), 'yyyy-MM-dd'),
+          weeksCount: 4,
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (data.error) throw new Error(data.error);
+
+      const newItems: CalendarItem[] = (data.items || []).map((item: any) => ({
+        id: crypto.randomUUID(),
+        brandProfileId: brandProfile.id,
+        date: new Date(item.date),
+        theme: item.theme,
+        type: item.type as CalendarItem['type'],
+        objective: item.objective,
+        status: item.status as CalendarItem['status'] || 'scheduled',
+      }));
+
+      setItems(newItems);
+      setCalendarItems(newItems);
+      newItems.forEach(onAddCalendarItem);
+
+      toast({
+        title: `${newItems.length} posts planifiés`,
+        description: "Votre calendrier éditorial a été généré.",
+      });
+    } catch (err: unknown) {
+      console.error("Calendar generation error:", err);
+      const message = err instanceof Error ? err.message : "Erreur lors de la génération";
+      setError(message);
+      toast({
+        title: "Erreur",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -98,11 +144,31 @@ export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem }:
             Planifiez vos publications pour {brandProfile.companyName}
           </p>
         </div>
-        <Button variant="premium">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau post
+        <Button 
+          variant="premium"
+          onClick={handleGenerateCalendar}
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Génération...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Générer avec l'IA
+            </>
+          )}
         </Button>
       </div>
+
+      {error && (
+        <div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+          <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
@@ -220,7 +286,16 @@ export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem }:
           </CardHeader>
           
           <CardContent className="space-y-4">
-            {selectedItems.length === 0 ? (
+            {items.length === 0 && (
+              <div className="text-center py-8">
+                <Sparkles className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Cliquez sur "Générer avec l'IA" pour créer votre calendrier
+                </p>
+              </div>
+            )}
+
+            {selectedItems.length === 0 && items.length > 0 ? (
               <div className="text-center py-8">
                 <CalendarIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">

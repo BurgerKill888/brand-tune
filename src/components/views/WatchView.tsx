@@ -7,7 +7,8 @@ import {
   AlertCircle,
   Sparkles,
   RefreshCw,
-  Filter
+  Filter,
+  ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { WatchItem, BrandProfile } from "@/types";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAppStore } from "@/store/appStore";
 
 interface WatchViewProps {
   brandProfile: BrandProfile;
@@ -22,58 +26,87 @@ interface WatchViewProps {
   onAddWatchItem: (item: WatchItem) => void;
 }
 
-// Mock data for demonstration
-const MOCK_WATCH_ITEMS: WatchItem[] = [
-  {
-    id: '1',
-    brandProfileId: '1',
-    title: "L'IA générative transforme le marketing B2B",
-    summary: "Les entreprises adoptent massivement les outils d'IA pour automatiser la création de contenu tout en maintenant la qualité.",
-    source: "Harvard Business Review",
-    url: "https://hbr.org",
-    angle: "Montrer comment votre solution intègre l'IA de manière éthique",
-    relevance: 'high',
-    objective: 'credibility',
-    createdAt: new Date(),
-  },
-  {
-    id: '2',
-    brandProfileId: '1',
-    title: "Tendances LinkedIn 2025 : l'authenticité prime",
-    summary: "Les posts personnels et authentiques génèrent 3x plus d'engagement que le contenu corporate classique.",
-    source: "Social Media Today",
-    url: "https://socialmediatoday.com",
-    angle: "Partager une histoire personnelle liée à votre parcours entrepreneurial",
-    relevance: 'high',
-    objective: 'engagement',
-    createdAt: new Date(),
-  },
-  {
-    id: '3',
-    brandProfileId: '1',
-    title: "Le format carrousel domine sur LinkedIn",
-    summary: "Les carrousels obtiennent un reach 2x supérieur aux posts texte simples selon les dernières statistiques.",
-    source: "LinkedIn News",
-    url: "https://linkedin.com",
-    angle: "Créer un carrousel éducatif sur votre expertise principale",
-    relevance: 'medium',
-    objective: 'reach',
-    createdAt: new Date(),
-  },
-];
-
 export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchViewProps) {
+  const { toast } = useToast();
+  const { setCurrentView, setWatchItems } = useAppStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [items, setItems] = useState<WatchItem[]>(
-    watchItems.length > 0 ? watchItems : MOCK_WATCH_ITEMS
-  );
+  const [items, setItems] = useState<WatchItem[]>(watchItems);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Entrez une requête",
+        description: "Tapez des mots-clés pour lancer la recherche.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    setError(null);
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('analyze-watch', {
+        body: {
+          query: searchQuery,
+          brandProfile: {
+            companyName: brandProfile.companyName,
+            sector: brandProfile.sector,
+            targets: brandProfile.targets,
+            businessObjectives: brandProfile.businessObjectives,
+            values: brandProfile.values,
+          }
+        }
+      });
+
+      if (fnError) throw fnError;
+      if (data.error) throw new Error(data.error);
+
+      const newItems: WatchItem[] = (data.items || []).map((item: any) => ({
+        id: crypto.randomUUID(),
+        brandProfileId: brandProfile.id,
+        title: item.title,
+        summary: item.summary,
+        source: item.source,
+        url: item.url,
+        angle: item.angle,
+        relevance: item.relevance,
+        objective: item.objective,
+        alert: item.alert,
+        createdAt: new Date(),
+      }));
+
+      setItems(newItems);
+      setWatchItems(newItems);
+      newItems.forEach(onAddWatchItem);
+
+      toast({
+        title: `${newItems.length} tendances trouvées`,
+        description: "L'IA a analysé les sujets pertinents pour votre marque.",
+      });
+    } catch (err: unknown) {
+      console.error("Watch analysis error:", err);
+      const message = err instanceof Error ? err.message : "Erreur lors de l'analyse";
+      setError(message);
+      toast({
+        title: "Erreur",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreatePost = (item: WatchItem) => {
+    // Navigate to posts view with the angle pre-filled
+    setCurrentView('posts');
+    toast({
+      title: "Angle sélectionné",
+      description: `Créez un post sur: ${item.angle}`,
+    });
   };
 
   const relevanceColors = {
@@ -114,16 +147,13 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Rechercher des tendances, articles, sujets..."
+                placeholder="Ex: IA marketing B2B, tendances LinkedIn, growth hacking..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 className="h-12 pl-12"
               />
             </div>
-            <Button variant="secondary" size="lg">
-              <Filter className="w-4 h-4 mr-2" />
-              Filtres
-            </Button>
             <Button 
               variant="premium" 
               size="lg"
@@ -135,11 +165,31 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
               ) : (
                 <Sparkles className="w-4 h-4 mr-2" />
               )}
-              Analyser
+              Analyser avec l'IA
             </Button>
           </div>
+          
+          {error && (
+            <div className="flex items-start gap-2 p-3 mt-4 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Empty State */}
+      {items.length === 0 && !isLoading && (
+        <div className="text-center py-16">
+          <Search className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <p className="text-lg font-medium text-muted-foreground">
+            Lancez une recherche pour découvrir les tendances
+          </p>
+          <p className="text-sm text-muted-foreground/70 mt-1">
+            L'IA analysera les sujets pertinents pour votre secteur
+          </p>
+        </div>
+      )}
 
       {/* Results Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -157,7 +207,9 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
                   </CardTitle>
                   <CardDescription className="mt-2 flex items-center gap-2">
                     <span className="font-medium">{item.source}</span>
-                    <ExternalLink className="w-3 h-3" />
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-3 h-3 hover:text-primary" />
+                    </a>
                   </CardDescription>
                 </div>
                 <Badge variant={relevanceColors[item.relevance]}>
@@ -189,8 +241,13 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
                   <Button variant="ghost" size="sm">
                     <Bookmark className="w-4 h-4" />
                   </Button>
-                  <Button variant="secondary" size="sm">
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => handleCreatePost(item)}
+                  >
                     Créer un post
+                    <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>
               </div>

@@ -1,0 +1,10 @@
+project_id = "txkivfkeoxbncqleehia"
+
+[functions.generate-post]
+verify_jwt = false
+
+[functions.analyze-watch]
+verify_jwt = false
+
+[functions.generate-calendar]
+verify_jwt = false

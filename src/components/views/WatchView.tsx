@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Sparkles,
   RefreshCw,
-  Filter,
   ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +23,12 @@ interface WatchViewProps {
   brandProfile: BrandProfile;
   watchItems: WatchItem[];
   onAddWatchItem: (item: WatchItem) => void;
+  onSaveItems: (items: WatchItem[]) => Promise<{ error: any }>;
 }
 
-export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchViewProps) {
+export function WatchView({ brandProfile, watchItems, onAddWatchItem, onSaveItems }: WatchViewProps) {
   const { toast } = useToast();
-  const { setCurrentView, setWatchItems } = useAppStore();
+  const { setCurrentView } = useAppStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [items, setItems] = useState<WatchItem[]>(watchItems);
@@ -79,8 +79,9 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
       }));
 
       setItems(newItems);
-      setWatchItems(newItems);
-      newItems.forEach(onAddWatchItem);
+      
+      // Save to database
+      await onSaveItems(newItems);
 
       toast({
         title: `${newItems.length} tendances trouvées`,
@@ -101,7 +102,6 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
   };
 
   const handleCreatePost = (item: WatchItem) => {
-    // Navigate to posts view with the angle pre-filled
     setCurrentView('posts');
     toast({
       title: "Angle sélectionné",
@@ -207,9 +207,11 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem }: WatchVie
                   </CardTitle>
                   <CardDescription className="mt-2 flex items-center gap-2">
                     <span className="font-medium">{item.source}</span>
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="w-3 h-3 hover:text-primary" />
-                    </a>
+                    {item.url && (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-3 h-3 hover:text-primary" />
+                      </a>
+                    )}
                   </CardDescription>
                 </div>
                 <Badge variant={relevanceColors[item.relevance]}>

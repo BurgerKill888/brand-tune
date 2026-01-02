@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -15,19 +15,19 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { CalendarItem, BrandProfile, WatchItem } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addWeeks } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAppStore } from "@/store/appStore";
+import { useWatchItems } from "@/hooks/useWatchItems";
 
 interface CalendarViewProps {
   brandProfile: BrandProfile;
   calendarItems: CalendarItem[];
   onAddCalendarItem: (item: CalendarItem) => void;
+  onSaveItems: (items: CalendarItem[]) => Promise<{ error: any }>;
 }
 
 const typeIcons = {
@@ -46,14 +46,18 @@ const typeColors = {
   news: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
-export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem }: CalendarViewProps) {
+export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem, onSaveItems }: CalendarViewProps) {
   const { toast } = useToast();
-  const { watchItems, setCalendarItems } = useAppStore();
+  const { watchItems } = useWatchItems(brandProfile.id);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<CalendarItem[]>(calendarItems);
+
+  useEffect(() => {
+    setItems(calendarItems);
+  }, [calendarItems]);
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -111,12 +115,13 @@ export function CalendarView({ brandProfile, calendarItems, onAddCalendarItem }:
       }));
 
       setItems(newItems);
-      setCalendarItems(newItems);
-      newItems.forEach(onAddCalendarItem);
+      
+      // Save to database
+      await onSaveItems(newItems);
 
       toast({
         title: `${newItems.length} posts planifiés`,
-        description: "Votre calendrier éditorial a été généré.",
+        description: "Votre calendrier éditorial a été généré et sauvegardé.",
       });
     } catch (err: unknown) {
       console.error("Calendar generation error:", err);

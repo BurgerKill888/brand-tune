@@ -14,7 +14,262 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      brand_profiles: {
+        Row: {
+          business_objectives: string[] | null
+          company_name: string
+          created_at: string
+          editorial_charter: Json | null
+          example_posts: string[] | null
+          forbidden_words: string[] | null
+          id: string
+          kpis: string[] | null
+          publishing_frequency: string
+          sector: string
+          targets: string[] | null
+          tone: string
+          updated_at: string
+          user_id: string
+          values: string[] | null
+        }
+        Insert: {
+          business_objectives?: string[] | null
+          company_name: string
+          created_at?: string
+          editorial_charter?: Json | null
+          example_posts?: string[] | null
+          forbidden_words?: string[] | null
+          id?: string
+          kpis?: string[] | null
+          publishing_frequency?: string
+          sector: string
+          targets?: string[] | null
+          tone?: string
+          updated_at?: string
+          user_id: string
+          values?: string[] | null
+        }
+        Update: {
+          business_objectives?: string[] | null
+          company_name?: string
+          created_at?: string
+          editorial_charter?: Json | null
+          example_posts?: string[] | null
+          forbidden_words?: string[] | null
+          id?: string
+          kpis?: string[] | null
+          publishing_frequency?: string
+          sector?: string
+          targets?: string[] | null
+          tone?: string
+          updated_at?: string
+          user_id?: string
+          values?: string[] | null
+        }
+        Relationships: []
+      }
+      calendar_items: {
+        Row: {
+          brand_profile_id: string | null
+          content_type: string
+          created_at: string
+          id: string
+          objective: string | null
+          scheduled_date: string
+          status: string
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_profile_id?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          objective?: string | null
+          scheduled_date: string
+          status?: string
+          theme: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_profile_id?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          objective?: string | null
+          scheduled_date?: string
+          status?: string
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_items_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          brand_profile_id: string | null
+          calendar_item_id: string | null
+          content: string
+          created_at: string
+          cta: string | null
+          editorial_justification: string | null
+          hashtags: string[] | null
+          id: string
+          keywords: string[] | null
+          length: string | null
+          readability_score: number | null
+          status: string
+          suggestions: string[] | null
+          tone: string | null
+          updated_at: string
+          user_id: string
+          variants: string[] | null
+        }
+        Insert: {
+          brand_profile_id?: string | null
+          calendar_item_id?: string | null
+          content: string
+          created_at?: string
+          cta?: string | null
+          editorial_justification?: string | null
+          hashtags?: string[] | null
+          id?: string
+          keywords?: string[] | null
+          length?: string | null
+          readability_score?: number | null
+          status?: string
+          suggestions?: string[] | null
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+          variants?: string[] | null
+        }
+        Update: {
+          brand_profile_id?: string | null
+          calendar_item_id?: string | null
+          content?: string
+          created_at?: string
+          cta?: string | null
+          editorial_justification?: string | null
+          hashtags?: string[] | null
+          id?: string
+          keywords?: string[] | null
+          length?: string | null
+          readability_score?: number | null
+          status?: string
+          suggestions?: string[] | null
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+          variants?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_calendar_item_id_fkey"
+            columns: ["calendar_item_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      watch_items: {
+        Row: {
+          alert: string | null
+          angle: string | null
+          brand_profile_id: string | null
+          created_at: string
+          id: string
+          objective: string | null
+          relevance: string | null
+          source: string | null
+          summary: string | null
+          title: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          alert?: string | null
+          angle?: string | null
+          brand_profile_id?: string | null
+          created_at?: string
+          id?: string
+          objective?: string | null
+          relevance?: string | null
+          source?: string | null
+          summary?: string | null
+          title: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          alert?: string | null
+          angle?: string | null
+          brand_profile_id?: string | null
+          created_at?: string
+          id?: string
+          objective?: string | null
+          relevance?: string | null
+          source?: string | null
+          summary?: string | null
+          title?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_items_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

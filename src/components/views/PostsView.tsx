@@ -11,7 +11,8 @@ import {
   Target,
   Zap,
   ThumbsUp,
-  AlertCircle
+  AlertCircle,
+  Save
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [selectedLength, setSelectedLength] = useState<Post['length']>('medium');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [topic, setTopic] = useState("");
   const [includeCta, setIncludeCta] = useState(true);
@@ -93,11 +95,10 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
       };
 
       setCurrentPost(newPost);
-      onAddPost(newPost);
       
       toast({
         title: "Post généré !",
-        description: "Votre nouveau post est prêt à être optimisé.",
+        description: "Votre nouveau post est prêt. Cliquez sur 'Sauvegarder' pour l'enregistrer.",
       });
     } catch (err: unknown) {
       console.error("Generation error:", err);
@@ -110,6 +111,27 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!currentPost) return;
+    
+    setIsSaving(true);
+    try {
+      await onAddPost(currentPost);
+      toast({
+        title: "Post sauvegardé",
+        description: "Votre post a été enregistré dans la base de données.",
+      });
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder le post.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -273,6 +295,19 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                       </>
                     )}
                   </Button>
+                  <Button
+                    variant="premium"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Sauvegarder
+                  </Button>
                 </div>
               )}
             </div>
@@ -385,6 +420,37 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
           </CardContent>
         </Card>
       </div>
+
+      {/* Previous Posts */}
+      {posts.length > 0 && (
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Posts sauvegardés ({posts.length})</CardTitle>
+            <CardDescription>Vos posts générés précédemment</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {posts.slice(0, 6).map((post) => (
+                <div 
+                  key={post.id}
+                  className="p-4 rounded-lg border border-border hover:border-primary/50 transition-all cursor-pointer"
+                  onClick={() => setCurrentPost(post)}
+                >
+                  <p className="text-sm text-foreground line-clamp-3">{post.content}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge variant="secondary" className="text-xs">
+                      {post.length}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {post.content.length} car.
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

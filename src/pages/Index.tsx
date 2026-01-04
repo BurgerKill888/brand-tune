@@ -5,40 +5,62 @@ import { OnboardingView } from "@/components/views/OnboardingView";
 import { WatchView } from "@/components/views/WatchView";
 import { CalendarView } from "@/components/views/CalendarView";
 import { PostsView } from "@/components/views/PostsView";
+import { AuthForm } from "@/components/auth/AuthForm";
 import { useAppStore } from "@/store/appStore";
-import { AppView, BrandProfile, WatchItem, CalendarItem, Post } from "@/types";
+import { AppView, BrandProfile, Post } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useBrandProfile } from "@/hooks/useBrandProfile";
+import { useWatchItems } from "@/hooks/useWatchItems";
+import { useCalendarItems } from "@/hooks/useCalendarItems";
+import { usePosts } from "@/hooks/usePosts";
 
 const Index = () => {
   const { toast } = useToast();
-  const {
-    currentView,
-    setCurrentView,
-    brandProfile,
-    setBrandProfile,
-    watchItems,
-    addWatchItem,
-    calendarItems,
-    addCalendarItem,
-    posts,
-    addPost,
-    updatePost,
-  } = useAppStore();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { currentView, setCurrentView } = useAppStore();
+
+  // Brand profile hook
+  const { brandProfile, loading: profileLoading, saveBrandProfile } = useBrandProfile();
+  
+  // Data hooks - only fetch when we have a brand profile
+  const { watchItems, saveWatchItems } = useWatchItems(brandProfile?.id);
+  const { calendarItems, saveCalendarItems } = useCalendarItems(brandProfile?.id);
+  const { posts, savePost } = usePosts(brandProfile?.id);
 
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Show auth form if not authenticated
+  if (!authLoading && !user) {
+    return <AuthForm />;
+  }
+
+  // Show loading state
+  if (authLoading || profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleStartOnboarding = () => {
     setShowOnboarding(true);
   };
 
-  const handleCompleteOnboarding = (profile: BrandProfile) => {
-    setBrandProfile(profile);
-    setShowOnboarding(false);
-    setCurrentView('dashboard');
-    toast({
-      title: "Profil créé avec succès ! 🎉",
-      description: "Votre stratégie éditoriale est prête.",
-    });
+  const handleCompleteOnboarding = async (profile: BrandProfile) => {
+    const { error } = await saveBrandProfile(profile);
+    if (!error) {
+      setShowOnboarding(false);
+      setCurrentView('dashboard');
+      toast({
+        title: "Profil créé avec succès ! 🎉",
+        description: "Votre stratégie éditoriale est prête.",
+      });
+    }
   };
 
   const handleNavigate = (view: AppView) => {
@@ -51,6 +73,17 @@ const Index = () => {
       return;
     }
     setCurrentView(view);
+  };
+
+  const handleAddPost = async (post: Post) => {
+    await savePost(post);
+  };
+
+  const handleUpdatePost = async (id: string, updates: Partial<Post>) => {
+    const existingPost = posts.find(p => p.id === id);
+    if (existingPost) {
+      await savePost({ ...existingPost, ...updates });
+    }
   };
 
   const renderView = () => {
@@ -75,7 +108,8 @@ const Index = () => {
           <WatchView
             brandProfile={brandProfile}
             watchItems={watchItems}
-            onAddWatchItem={addWatchItem}
+            onAddWatchItem={() => {}}
+            onSaveItems={saveWatchItems}
           />
         ) : null;
       case 'calendar':
@@ -83,7 +117,8 @@ const Index = () => {
           <CalendarView
             brandProfile={brandProfile}
             calendarItems={calendarItems}
-            onAddCalendarItem={addCalendarItem}
+            onAddCalendarItem={() => {}}
+            onSaveItems={saveCalendarItems}
           />
         ) : null;
       case 'posts':
@@ -91,8 +126,8 @@ const Index = () => {
           <PostsView
             brandProfile={brandProfile}
             posts={posts}
-            onAddPost={addPost}
-            onUpdatePost={updatePost}
+            onAddPost={handleAddPost}
+            onUpdatePost={handleUpdatePost}
           />
         ) : null;
       case 'settings':

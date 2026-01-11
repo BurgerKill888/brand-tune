@@ -173,7 +173,7 @@ export function MyPostsView({
     onUpdatePost(postId, { tone: newType });
   };
 
-  const handleSchedule = async (postId: string, scheduledAt: Date) => {
+  const handleSchedule = async (postId: string, scheduledAt: Date, updatedContent?: string) => {
     setIsScheduling(true);
     try {
       const post = posts.find((p) => p.id === postId);
@@ -517,7 +517,8 @@ export function MyPostsView({
         open={isDetailOpen}
         onOpenChange={setIsDetailOpen}
         onSchedule={handleSchedule}
-        onPublishNow={handlePublishNow}
+        onPublishNow={(postId, updatedContent) => handlePublishNow(postId)}
+        onUpdatePost={onUpdatePost}
         authorName={authorName}
         authorTitle={authorTitle}
         isScheduling={isScheduling}

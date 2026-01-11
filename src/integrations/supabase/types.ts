@@ -267,6 +267,63 @@ export type Database = {
           },
         ]
       }
+      scheduled_posts: {
+        Row: {
+          brand_profile_id: string | null
+          content: string
+          created_at: string
+          error_message: string | null
+          id: string
+          linkedin_post_id: string | null
+          post_id: string | null
+          scheduled_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_profile_id?: string | null
+          content: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          linkedin_post_id?: string | null
+          post_id?: string | null
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_profile_id?: string | null
+          content?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          linkedin_post_id?: string | null
+          post_id?: string | null
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_posts_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watch_items: {
         Row: {
           alert: string | null

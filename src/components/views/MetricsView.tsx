@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
   Eye, 
@@ -10,7 +12,9 @@ import {
   Calendar,
   FileText,
   Award,
-  Zap
+  Zap,
+  Linkedin,
+  RefreshCw
 } from "lucide-react";
 import { Post, CalendarItem } from "@/types";
 import { 
@@ -26,6 +30,8 @@ import {
   AreaChart,
   Tooltip
 } from "recharts";
+import { useLinkedIn } from "@/hooks/useLinkedIn";
+import { useLinkedInStats } from "@/hooks/useLinkedInStats";
 
 interface MetricsViewProps {
   posts: Post[];
@@ -33,6 +39,18 @@ interface MetricsViewProps {
 }
 
 export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
+  const linkedin = useLinkedIn();
+  const linkedInStats = useLinkedInStats();
+  const [hasLoadedLinkedIn, setHasLoadedLinkedIn] = useState(false);
+
+  // Load LinkedIn stats when connected
+  useEffect(() => {
+    if (linkedin.isConnected && linkedin.accessToken && linkedin.profile && !hasLoadedLinkedIn) {
+      linkedInStats.fetchLinkedInPosts(linkedin.accessToken, linkedin.profile.id);
+      setHasLoadedLinkedIn(true);
+    }
+  }, [linkedin.isConnected, linkedin.accessToken, linkedin.profile, hasLoadedLinkedIn]);
+
   // Calculate metrics
   const totalPosts = posts.length;
   const publishedPosts = posts.filter(p => p.status === 'published').length;
@@ -82,13 +100,21 @@ export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
     { name: 'Long', value: postsByLength['long'] || 0, fill: 'hsl(var(--chart-3))' },
   ];
 
-  // Simulated engagement data (would come from LinkedIn API in production)
-  const engagementData = [
-    { week: 'S1', vues: 1200, likes: 45, commentaires: 12, partages: 8 },
-    { week: 'S2', vues: 1850, likes: 67, commentaires: 23, partages: 15 },
-    { week: 'S3', vues: 2100, likes: 89, commentaires: 34, partages: 22 },
-    { week: 'S4', vues: 1950, likes: 72, commentaires: 28, partages: 18 },
-  ];
+  // Use real LinkedIn data if available, otherwise use simulated data
+  const engagementData = linkedin.isConnected && linkedInStats.posts.length > 0
+    ? linkedInStats.posts.slice(0, 4).map((post, i) => ({
+        week: `S${i + 1}`,
+        vues: post.stats.likes * 15, // Estimated views
+        likes: post.stats.likes,
+        commentaires: post.stats.comments,
+        partages: post.stats.shares,
+      }))
+    : [
+        { week: 'S1', vues: 1200, likes: 45, commentaires: 12, partages: 8 },
+        { week: 'S2', vues: 1850, likes: 67, commentaires: 23, partages: 15 },
+        { week: 'S3', vues: 2100, likes: 89, commentaires: 34, partages: 22 },
+        { week: 'S4', vues: 1950, likes: 72, commentaires: 28, partages: 18 },
+      ];
 
   // Top hashtags
   const hashtagCounts = posts.reduce((acc, post) => {
@@ -113,6 +139,96 @@ export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
           Analysez les performances de votre stratégie de contenu
         </p>
       </div>
+
+      {/* LinkedIn Stats Banner */}
+      {linkedin.isConnected ? (
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Linkedin className="w-6 h-6 text-primary" />
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Statistiques LinkedIn connectées
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {linkedInStats.loading 
+                      ? "Chargement des statistiques..."
+                      : `${linkedInStats.posts.length} posts analysés`
+                    }
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (linkedin.accessToken && linkedin.profile) {
+                    linkedInStats.fetchLinkedInPosts(linkedin.accessToken, linkedin.profile.id);
+                  }
+                }}
+                disabled={linkedInStats.loading}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${linkedInStats.loading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-border/50 bg-secondary/30">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Linkedin className="w-6 h-6 text-muted-foreground" />
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Connectez LinkedIn pour des stats réelles
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Les données ci-dessous sont simulées
+                  </p>
+                </div>
+              </div>
+              <Badge variant="secondary">Données simulées</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* LinkedIn Real Stats (when connected) */}
+      {linkedin.isConnected && linkedInStats.totalStats.likes > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <MetricCard
+            title="Vues estimées"
+            value={linkedInStats.totalStats.views || 0}
+            icon={Eye}
+            trend="LinkedIn"
+            trendUp={null}
+          />
+          <MetricCard
+            title="Total Likes"
+            value={linkedInStats.totalStats.likes}
+            icon={ThumbsUp}
+            trend="LinkedIn"
+            trendUp={null}
+          />
+          <MetricCard
+            title="Commentaires"
+            value={linkedInStats.totalStats.comments}
+            icon={MessageCircle}
+            trend="LinkedIn"
+            trendUp={null}
+          />
+          <MetricCard
+            title="Partages"
+            value={linkedInStats.totalStats.shares}
+            icon={Share2}
+            trend="LinkedIn"
+            trendUp={null}
+          />
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Sparkles, 
   Copy, 
@@ -50,6 +50,7 @@ import { useScheduledPosts } from "@/hooks/useScheduledPosts";
 import { LinkedInPreview } from "@/components/posts/LinkedInPreview";
 import { SchedulePostDialog } from "@/components/posts/SchedulePostDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAppStore } from "@/store/appStore";
 
 interface PostsViewProps {
   brandProfile: BrandProfile;
@@ -95,6 +96,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
   const { toast } = useToast();
   const linkedin = useLinkedIn();
   const { scheduledPosts, schedulePost } = useScheduledPosts(brandProfile.id);
+  const { prefillPostData, setPrefillPostData } = useAppStore();
   
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -115,6 +117,35 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
   const [registre, setRegistre] = useState("tutoiement");
   const [langue, setLangue] = useState("francais");
   const [inputTab, setInputTab] = useState("sujet");
+
+  // Handle prefill data from IdeasView
+  useEffect(() => {
+    if (prefillPostData) {
+      setTopic(prefillPostData.topic);
+      
+      // Map category from IdeasView to postCategory
+      const categoryMap: Record<string, string> = {
+        "Bonnes pratiques": "conseil",
+        "Explication / analyse": "explication",
+        "Liste de conseils/règles/etc": "conseil",
+        "Conseil percutant": "conseil",
+        "Tendance du moment": "tendance",
+        "Retour d'expérience": "cas-etude",
+      };
+      
+      if (prefillPostData.category && categoryMap[prefillPostData.category]) {
+        setPostCategory(categoryMap[prefillPostData.category]);
+      }
+      
+      // Clear the prefill data after using it
+      setPrefillPostData(null);
+      
+      toast({
+        title: "Idée chargée",
+        description: "Le sujet a été pré-rempli. Cliquez sur 'Générer' pour créer votre post.",
+      });
+    }
+  }, [prefillPostData, setPrefillPostData, toast]);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;

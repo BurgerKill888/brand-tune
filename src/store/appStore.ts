@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { AppView, BrandProfile, WatchItem, CalendarItem, Post } from '@/types';
 
+export interface PrefillPostData {
+  topic: string;
+  category?: string;
+}
+
 interface AppState {
   currentView: AppView;
   setCurrentView: (view: AppView) => void;
@@ -23,6 +28,9 @@ interface AppState {
   setPosts: (posts: Post[]) => void;
   addPost: (post: Post) => void;
   updatePost: (id: string, updates: Partial<Post>) => void;
+  
+  prefillPostData: PrefillPostData | null;
+  setPrefillPostData: (data: PrefillPostData | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -49,4 +57,7 @@ export const useAppStore = create<AppState>((set) => ({
   updatePost: (id, updates) => set((state) => ({
     posts: state.posts.map((p) => (p.id === id ? { ...p, ...updates } : p)),
   })),
+  
+  prefillPostData: null,
+  setPrefillPostData: (data) => set({ prefillPostData: data }),
 }));

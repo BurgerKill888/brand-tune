@@ -9,7 +9,8 @@ import {
   ChevronRight,
   BarChart3,
   LogOut,
-  Lightbulb
+  Lightbulb,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'dashboard' as AppView, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'ideas' as AppView, label: 'Générateur', icon: Zap },
   { id: 'inspiration' as AppView, label: 'Inspiration', icon: Lightbulb },
   { id: 'watch' as AppView, label: 'Veille', icon: Compass },
   { id: 'calendar' as AppView, label: 'Calendrier', icon: Calendar },

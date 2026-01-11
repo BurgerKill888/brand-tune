@@ -189,8 +189,17 @@ const Index = () => {
             onCreatePost={() => setCurrentView('posts')}
             onEditPost={handleEditPost}
             onDeletePost={handleDeletePost}
+            onUpdatePost={async (id, updates) => {
+              const existingPost = posts.find(p => p.id === id);
+              if (existingPost) {
+                await savePost({ ...existingPost, ...updates });
+              }
+            }}
             onToggleFavorite={handleToggleFavorite}
             favorites={favoritePostIds}
+            brandProfileId={brandProfile.id}
+            authorName={brandProfile.companyName}
+            authorTitle={`Expert ${brandProfile.sector}`}
           />
         ) : null;
       case 'metrics':

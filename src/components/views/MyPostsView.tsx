@@ -17,6 +17,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import {
   Select,
@@ -39,18 +41,27 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PostDetailDialog } from '@/components/posts/PostDetailDialog';
+import { useScheduledPosts } from '@/hooks/useScheduledPosts';
+import { useLinkedIn } from '@/hooks/useLinkedIn';
+import { useToast } from '@/hooks/use-toast';
 
 interface MyPostsViewProps {
   posts: Post[];
   onCreatePost: () => void;
   onEditPost: (post: Post) => void;
   onDeletePost: (postId: string) => void;
+  onUpdatePost: (postId: string, updates: Partial<Post>) => void;
   onToggleFavorite?: (postId: string) => void;
   favorites?: string[];
+  brandProfileId?: string;
+  authorName?: string;
+  authorTitle?: string;
 }
 
 type FilterTab = 'all' | 'draft' | 'scheduled' | 'published' | 'favorites';
@@ -63,25 +74,42 @@ const POST_TYPES = [
   { value: 'news', label: 'Actualité', color: 'bg-red-100 text-red-700 border-red-200' },
 ];
 
+const POST_STATUSES = [
+  { value: 'draft', label: 'Brouillon', icon: FileText, color: 'text-muted-foreground' },
+  { value: 'ready', label: 'Planifié', icon: Calendar, color: 'text-blue-600' },
+  { value: 'published', label: 'Publié', icon: CheckCircle2, color: 'text-green-600' },
+];
+
 export function MyPostsView({
   posts,
   onCreatePost,
   onEditPost,
   onDeletePost,
+  onUpdatePost,
   onToggleFavorite,
   favorites = [],
+  brandProfileId,
+  authorName = 'Utilisateur',
+  authorTitle = 'Expert LinkedIn',
 }: MyPostsViewProps) {
+  const { toast } = useToast();
+  const { schedulePost } = useScheduledPosts(brandProfileId);
+  const { publishPost, isConnected } = useLinkedIn();
+  
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPosts, setSelectedPosts] = useState<string[]>([]);
   const [postsPerPage, setPostsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Filter posts based on active tab and search query
   const filteredPosts = useMemo(() => {
     let result = [...posts];
 
-    // Filter by tab
     switch (activeTab) {
       case 'draft':
         result = result.filter((p) => p.status === 'draft');
@@ -97,7 +125,6 @@ export function MyPostsView({
         break;
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -111,7 +138,6 @@ export function MyPostsView({
     return result;
   }, [posts, activeTab, searchQuery, favorites]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const paginatedPosts = filteredPosts.slice(
     (currentPage - 1) * postsPerPage,
@@ -134,30 +160,73 @@ export function MyPostsView({
     }
   };
 
-  const getStatusBadge = (status: Post['status']) => {
-    switch (status) {
-      case 'draft':
-        return (
-          <Badge variant="outline" className="gap-1 text-muted-foreground border-muted">
-            <FileText className="w-3 h-3" />
-            Brouillon
-          </Badge>
-        );
-      case 'ready':
-        return (
-          <Badge variant="outline" className="gap-1 text-blue-600 border-blue-200 bg-blue-50">
-            <Calendar className="w-3 h-3" />
-            Planifié
-          </Badge>
-        );
-      case 'published':
-        return (
-          <Badge variant="outline" className="gap-1 text-green-600 border-green-200 bg-green-50">
-            <CheckCircle2 className="w-3 h-3" />
-            Publié
-          </Badge>
-        );
+  const handleRowClick = (post: Post) => {
+    setSelectedPost(post);
+    setIsDetailOpen(true);
+  };
+
+  const handleStatusChange = (postId: string, newStatus: Post['status']) => {
+    onUpdatePost(postId, { status: newStatus });
+  };
+
+  const handleTypeChange = (postId: string, newType: string) => {
+    onUpdatePost(postId, { tone: newType });
+  };
+
+  const handleSchedule = async (postId: string, scheduledAt: Date) => {
+    setIsScheduling(true);
+    try {
+      const post = posts.find((p) => p.id === postId);
+      if (post) {
+        const success = await schedulePost(post.content, scheduledAt, postId);
+        if (success) {
+          onUpdatePost(postId, { status: 'ready' });
+          setIsDetailOpen(false);
+        }
+      }
+    } finally {
+      setIsScheduling(false);
     }
+  };
+
+  const handlePublishNow = async (postId: string) => {
+    if (!isConnected) {
+      toast({
+        title: "LinkedIn non connecté",
+        description: "Connectez votre compte LinkedIn dans les paramètres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const post = posts.find((p) => p.id === postId);
+      if (post) {
+        const success = await publishPost(post.content);
+        if (success) {
+          onUpdatePost(postId, { status: 'published' });
+          setIsDetailOpen(false);
+          toast({
+            title: "Post publié ! 🎉",
+            description: "Votre post a été publié sur LinkedIn.",
+          });
+        }
+      }
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const getStatusBadge = (status: Post['status']) => {
+    const statusConfig = POST_STATUSES.find((s) => s.value === status) || POST_STATUSES[0];
+    const Icon = statusConfig.icon;
+    return (
+      <Badge variant="outline" className={`gap-1 ${statusConfig.color}`}>
+        <Icon className="w-3 h-3" />
+        {statusConfig.label}
+      </Badge>
+    );
   };
 
   const getPostType = (tone: string) => {
@@ -268,8 +337,12 @@ export function MyPostsView({
               </TableRow>
             ) : (
               paginatedPosts.map((post) => (
-                <TableRow key={post.id} className="group">
-                  <TableCell>
+                <TableRow 
+                  key={post.id} 
+                  className="group cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleRowClick(post)}
+                >
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedPosts.includes(post.id)}
                       onCheckedChange={(checked) => handleSelectPost(post.id, !!checked)}
@@ -285,18 +358,65 @@ export function MyPostsView({
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(post.status)}</TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="gap-1 h-auto p-0 hover:bg-transparent">
+                          {getStatusBadge(post.status)}
+                          <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuLabel>Changer le statut</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {POST_STATUSES.map((status) => (
+                          <DropdownMenuItem
+                            key={status.value}
+                            onClick={() => handleStatusChange(post.id, status.value as Post['status'])}
+                            className={post.status === status.value ? 'bg-muted' : ''}
+                          >
+                            <status.icon className={`w-4 h-4 mr-2 ${status.color}`} />
+                            {status.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">–</span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Button variant="outline" size="sm" className="gap-1 text-xs">
                       <ImagePlus className="w-3 h-3" />
                       Ajouter
                     </Button>
                   </TableCell>
-                  <TableCell>{getPostType(post.tone)}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="gap-1 h-auto p-0 hover:bg-transparent">
+                          {getPostType(post.tone)}
+                          <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuLabel>Changer le type</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {POST_TYPES.map((type) => (
+                          <DropdownMenuItem
+                            key={type.value}
+                            onClick={() => handleTypeChange(post.id, type.value)}
+                            className={post.tone === type.value ? 'bg-muted' : ''}
+                          >
+                            <Badge variant="outline" className={`${type.color} mr-2`}>
+                              {type.label}
+                            </Badge>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {onToggleFavorite && (
                         <Button
@@ -321,10 +441,11 @@ export function MyPostsView({
                             <Edit className="w-4 h-4 mr-2" />
                             Modifier
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRowClick(post)}>
                             <Eye className="w-4 h-4 mr-2" />
-                            Aperçu
+                            Aperçu & Planifier
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => onDeletePost(post.id)}
@@ -378,7 +499,7 @@ export function MyPostsView({
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage === totalPages || totalPages === 0}
                   onClick={() => setCurrentPage(currentPage + 1)}
                 >
                   Suivant
@@ -389,6 +510,19 @@ export function MyPostsView({
           </div>
         )}
       </div>
+
+      {/* Post Detail Dialog */}
+      <PostDetailDialog
+        post={selectedPost}
+        open={isDetailOpen}
+        onOpenChange={setIsDetailOpen}
+        onSchedule={handleSchedule}
+        onPublishNow={handlePublishNow}
+        authorName={authorName}
+        authorTitle={authorTitle}
+        isScheduling={isScheduling}
+        isPublishing={isPublishing}
+      />
     </div>
   );
 }

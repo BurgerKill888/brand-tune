@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, RefreshCw, Heart, ExternalLink, Sparkles } from "lucide-react";
+import { Plus, RefreshCw, Heart, ExternalLink, Sparkles, Search, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,8 @@ export interface PostIdea {
   title: string;
   category: string;
   color: string;
+  source?: string;
+  angle?: string;
 }
 
 const IDEA_COLORS = [
@@ -37,7 +39,20 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Conseil percutant": "text-emerald-600",
   "Tendance du moment": "text-pink-600",
   "Retour d'expérience": "text-blue-600",
+  "Actualité": "text-red-600",
+  "Innovation": "text-indigo-600",
 };
+
+const CATEGORIES = [
+  "Bonnes pratiques",
+  "Explication / analyse", 
+  "Liste de conseils/règles/etc",
+  "Conseil percutant",
+  "Tendance du moment",
+  "Retour d'expérience",
+  "Actualité",
+  "Innovation",
+];
 
 export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
   const { toast } = useToast();
@@ -60,13 +75,87 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
     setIsGenerating(true);
 
     try {
+      // Use Perplexity to search for trending topics related to the theme
+      const { data, error } = await supabase.functions.invoke('perplexity-watch', {
+        body: {
+          query: `Actualités, tendances et sujets chauds sur "${theme}" pour créer du contenu LinkedIn professionnel engageant. Focus sur les dernières nouveautés, études de cas, statistiques récentes et bonnes pratiques.`,
+          brandProfile: {
+            companyName: brandProfile.companyName,
+            sector: brandProfile.sector,
+            targets: brandProfile.targets || [],
+            businessObjectives: brandProfile.businessObjectives || [],
+          },
+        }
+      });
+
+      if (error) throw error;
+
+      // Transform Perplexity results into post ideas
+      const perplexityItems = data.items || [];
+      
+      const parsedIdeas: PostIdea[] = perplexityItems.map((item: {
+        title: string;
+        summary?: string;
+        source?: string;
+        angle?: string;
+        objective?: string;
+      }, index: number) => {
+        // Map objective to category
+        let category = "Tendance du moment";
+        if (item.objective === "credibility") category = "Explication / analyse";
+        else if (item.objective === "engagement") category = "Conseil percutant";
+        else if (item.objective === "lead") category = "Bonnes pratiques";
+        else if (item.title?.toLowerCase().includes("étude") || item.title?.toLowerCase().includes("rapport")) {
+          category = "Actualité";
+        } else if (item.title?.toLowerCase().includes("conseil") || item.title?.toLowerCase().includes("astuce")) {
+          category = "Liste de conseils/règles/etc";
+        }
+
+        return {
+          id: crypto.randomUUID(),
+          title: item.angle || item.title || item.summary?.slice(0, 100) || "Idée de post",
+          category,
+          color: IDEA_COLORS[index % IDEA_COLORS.length],
+          source: item.source,
+          angle: item.angle,
+        };
+      });
+
+      // If we got results, add some creative variations
+      if (parsedIdeas.length > 0) {
+        setIdeas(parsedIdeas);
+        setGenerationsRemaining(prev => Math.max(0, prev - 1));
+        
+        toast({
+          title: "Idées générées avec Perplexity !",
+          description: `${parsedIdeas.length} idées basées sur les dernières actualités de "${theme}".`,
+        });
+      } else {
+        // Fallback to generate-post if no Perplexity results
+        await generateWithAI();
+      }
+    } catch (err) {
+      console.error("Perplexity error, falling back to AI generation:", err);
+      await generateWithAI();
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateWithAI = async () => {
+    try {
       const { data, error } = await supabase.functions.invoke('generate-post', {
         body: {
-          topic: `Génère 6 idées de posts LinkedIn sur le thème: "${theme}". 
+          topic: `Génère 6 idées de posts LinkedIn originales et percutantes sur le thème: "${theme}". 
+          
+          Chaque idée doit être:
+          - Basée sur une tendance actuelle ou un angle original
+          - Adaptée au secteur: ${brandProfile.sector}
+          - Pertinente pour la cible: ${brandProfile.targets?.join(', ') || 'professionnels'}
           
           Pour chaque idée, génère:
-          - Un titre accrocheur de 1-2 phrases maximum
-          - Une catégorie parmi: Bonnes pratiques, Explication / analyse, Liste de conseils/règles/etc, Conseil percutant, Tendance du moment, Retour d'expérience
+          - Un titre accrocheur de 1-2 phrases maximum (angle éditorial précis)
+          - Une catégorie parmi: ${CATEGORIES.join(', ')}
           
           Retourne un JSON avec le format:
           {
@@ -92,7 +181,6 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
       let parsedIdeas: PostIdea[] = [];
       
       try {
-        // Try to extract JSON from content
         const content = data.content || '';
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -107,7 +195,6 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
           }
         }
       } catch {
-        // Fallback: generate sample ideas
         parsedIdeas = generateFallbackIdeas(theme);
       }
 
@@ -124,25 +211,22 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
       });
     } catch (err) {
       console.error("Error generating ideas:", err);
-      // Use fallback ideas
       setIdeas(generateFallbackIdeas(theme));
       toast({
         title: "Idées générées",
         description: "Voici quelques suggestions basées sur votre thème.",
       });
-    } finally {
-      setIsGenerating(false);
     }
   };
 
   const generateFallbackIdeas = (themeInput: string): PostIdea[] => {
     const templates = [
-      { template: `4 réflexes à adopter pour collaborer efficacement avec ${themeInput}`, category: "Bonnes pratiques" },
-      { template: `Pourquoi ${themeInput} a encore besoin de l'humain : petit décryptage sur la relation complémentaire`, category: "Explication / analyse" },
-      { template: `13 questions incontournables à se poser avant d'intégrer ${themeInput} dans un projet`, category: "Liste de conseils/règles/etc" },
-      { template: `Oublier d'écrire un brief précis pour ${themeInput} ? C'est risquer l'irrelevant.`, category: "Conseil percutant" },
-      { template: `3 gestes simples pour sécuriser vos données quand vous utilisez ${themeInput}`, category: "Bonnes pratiques" },
-      { template: `8 erreurs fréquentes lors de l'utilisation de ${themeInput} (et comment les éviter)`, category: "Liste de conseils/règles/etc" },
+      { template: `Les 5 tendances ${themeInput} qui vont transformer votre métier en 2025`, category: "Tendance du moment" },
+      { template: `Pourquoi ${themeInput} change la donne : retour d'expérience après 6 mois`, category: "Retour d'expérience" },
+      { template: `10 erreurs que tout le monde fait avec ${themeInput} (et comment les éviter)`, category: "Liste de conseils/règles/etc" },
+      { template: `${themeInput} : le guide ultime pour les débutants qui veulent se démarquer`, category: "Bonnes pratiques" },
+      { template: `Ce que personne ne vous dit sur ${themeInput} (insights exclusifs)`, category: "Conseil percutant" },
+      { template: `Comment ${themeInput} a doublé notre productivité : étude de cas détaillée`, category: "Explication / analyse" },
     ];
 
     return templates.map((t, index) => ({
@@ -174,7 +258,7 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
             Générateur d'idées
           </h1>
           <p className="text-muted-foreground mt-1">
-            Choisis un thème et génère des idées de posts.
+            Recherche les dernières tendances et génère des idées de posts pertinentes.
           </p>
         </div>
         <Badge variant="outline" className="px-3 py-1.5">
@@ -185,37 +269,54 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
 
       {/* Theme Input */}
       <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Ex: IA générative, marketing B2B, leadership, cybersécurité..."
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && generateIdeas()}
+            className="pl-10"
+          />
+        </div>
         <Button
           onClick={generateIdeas}
           disabled={isGenerating || !theme.trim()}
           className="bg-primary hover:bg-primary/90 gap-2"
         >
-          <Plus className="w-4 h-4" />
-          Nouveau thème
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Recherche...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              Générer des idées
+            </>
+          )}
         </Button>
-        <Input
-          placeholder="Ex: IA, marketing digital, leadership..."
-          value={theme}
-          onChange={(e) => setTheme(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && generateIdeas()}
-          className="max-w-xs"
-        />
         <Button
           variant="outline"
           size="icon"
           onClick={generateIdeas}
           disabled={isGenerating || !theme.trim()}
-          className={cn(
-            "rounded-full bg-primary text-primary-foreground hover:bg-primary/90",
-            isGenerating && "animate-spin"
-          )}
+          className="rounded-full"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={cn("w-4 h-4", isGenerating && "animate-spin")} />
         </Button>
         <div className="flex-1" />
         <Button variant="ghost" size="icon" className="text-muted-foreground">
           <Heart className="w-5 h-5" />
         </Button>
+      </div>
+
+      {/* Info banner */}
+      <div className="bg-secondary/50 border border-border rounded-lg p-3 flex items-center gap-3">
+        <Search className="w-5 h-5 text-primary" />
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Recherche intelligente :</span> Les idées sont générées à partir des dernières actualités et tendances du web grâce à Perplexity AI.
+        </p>
       </div>
 
       {/* Ideas Grid */}
@@ -250,6 +351,12 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
                 {idea.title}
               </p>
 
+              {idea.source && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Source: {idea.source}
+                </p>
+              )}
+
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-black/10">
                 <span className={cn("text-xs font-medium", CATEGORY_COLORS[idea.category] || "text-muted-foreground")}>
                   {idea.category}
@@ -276,7 +383,8 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
             Aucune idée générée
           </h3>
           <p className="text-muted-foreground max-w-md">
-            Entrez un thème ci-dessus et cliquez sur "Nouveau thème" pour générer des idées de posts LinkedIn.
+            Entrez un thème ci-dessus (ex: "intelligence artificielle", "recrutement", "développement durable") 
+            et cliquez sur "Générer des idées" pour découvrir les dernières tendances.
           </p>
         </div>
       )}

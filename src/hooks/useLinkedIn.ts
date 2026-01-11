@@ -77,9 +77,9 @@ export function useLinkedIn() {
 
       if (error) throw error;
 
-      // Store state for verification
-      sessionStorage.setItem('linkedin_oauth_state', data.state);
-      sessionStorage.setItem('linkedin_redirect_uri', redirectUri);
+      // Store state in localStorage (more reliable across windows than sessionStorage)
+      localStorage.setItem('linkedin_oauth_state', data.state);
+      localStorage.setItem('linkedin_redirect_uri', redirectUri);
       
       // Open LinkedIn auth in popup
       const width = 600;
@@ -116,7 +116,7 @@ export function useLinkedIn() {
             body: { 
               action: 'exchange_code', 
               code: event.data.code,
-              redirectUri: sessionStorage.getItem('linkedin_redirect_uri')
+              redirectUri: localStorage.getItem('linkedin_redirect_uri')
             }
           });
 

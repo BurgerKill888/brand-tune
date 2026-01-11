@@ -5,6 +5,7 @@ import { OnboardingView } from "@/components/views/OnboardingView";
 import { WatchView } from "@/components/views/WatchView";
 import { CalendarView } from "@/components/views/CalendarView";
 import { PostsView } from "@/components/views/PostsView";
+import { MyPostsView } from "@/components/views/MyPostsView";
 import { MetricsView } from "@/components/views/MetricsView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { InspirationView } from "@/components/views/InspirationView";
@@ -30,9 +31,10 @@ const Index = () => {
   // Data hooks - only fetch when we have a brand profile
   const { watchItems, saveWatchItems } = useWatchItems(brandProfile?.id);
   const { calendarItems, saveCalendarItems } = useCalendarItems(brandProfile?.id);
-  const { posts, savePost } = usePosts(brandProfile?.id);
+  const { posts, savePost, deletePost } = usePosts(brandProfile?.id);
 
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [favoritePostIds, setFavoritePostIds] = useState<string[]>([]);
 
   // Show auth form if not authenticated
   if (!authLoading && !user) {
@@ -99,11 +101,22 @@ const Index = () => {
     await savePost(post);
   };
 
-  const handleUpdatePost = async (id: string, updates: Partial<Post>) => {
-    const existingPost = posts.find(p => p.id === id);
-    if (existingPost) {
-      await savePost({ ...existingPost, ...updates });
-    }
+  const handleDeletePost = async (postId: string) => {
+    await deletePost(postId);
+  };
+
+  const handleToggleFavorite = (postId: string) => {
+    setFavoritePostIds((prev) =>
+      prev.includes(postId) ? prev.filter((id) => id !== postId) : [...prev, postId]
+    );
+  };
+
+  const handleEditPost = (post: Post) => {
+    setPrefillPostData({
+      topic: post.content.slice(0, 100),
+      category: post.tone as any,
+    });
+    setCurrentView('posts');
   };
 
   const renderView = () => {
@@ -161,7 +174,23 @@ const Index = () => {
             brandProfile={brandProfile}
             posts={posts}
             onAddPost={handleAddPost}
-            onUpdatePost={handleUpdatePost}
+            onUpdatePost={async (id, updates) => {
+              const existingPost = posts.find(p => p.id === id);
+              if (existingPost) {
+                await savePost({ ...existingPost, ...updates });
+              }
+            }}
+          />
+        ) : null;
+      case 'my-posts':
+        return brandProfile ? (
+          <MyPostsView
+            posts={posts}
+            onCreatePost={() => setCurrentView('posts')}
+            onEditPost={handleEditPost}
+            onDeletePost={handleDeletePost}
+            onToggleFavorite={handleToggleFavorite}
+            favorites={favoritePostIds}
           />
         ) : null;
       case 'metrics':

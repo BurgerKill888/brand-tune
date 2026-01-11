@@ -75,11 +75,13 @@ serve(async (req) => {
       }
 
       case 'get_posts': {
-        // Get user's recent posts
+        // Get user's recent posts using the Posts API (v2)
         console.log('Fetching posts for member:', memberId);
 
+        // Use the correct LinkedIn API format - authors must be URL encoded
+        const authorUrn = encodeURIComponent(`urn:li:person:${memberId}`);
         const response = await fetch(
-          `https://api.linkedin.com/v2/ugcPosts?q=authors&authors=List(urn:li:person:${memberId})&count=10`,
+          `https://api.linkedin.com/v2/shares?q=owners&owners=${authorUrn}&count=10`,
           {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -105,8 +107,15 @@ serve(async (req) => {
         const postsData = await response.json();
         console.log('Fetched', postsData.elements?.length || 0, 'posts');
 
+        // Transform shares to a consistent format
+        const posts = (postsData.elements || []).map((share: any) => ({
+          id: share.activity || share.id,
+          text: share.text?.text || '',
+          created: { time: share.created?.time || Date.now() },
+        }));
+
         return new Response(JSON.stringify({
-          posts: postsData.elements || []
+          posts
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

@@ -65,7 +65,7 @@ export function useLinkedInStats() {
           
           postsWithStats.push({
             id: post.id,
-            text: post.specificContent?.['com.linkedin.ugc.ShareContent']?.shareCommentary?.text || '',
+            text: post.text || '',
             createdAt: post.created?.time ? new Date(post.created.time).toISOString() : new Date().toISOString(),
             stats,
           });

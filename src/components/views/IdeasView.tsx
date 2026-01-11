@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, RefreshCw, Heart, ExternalLink, Sparkles, Search, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { RefreshCw, Heart, ExternalLink, Sparkles, Search, Loader2, TrendingUp, Lightbulb } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface IdeasViewProps {
-  brandProfile: BrandProfile;
+  brandProfile: BrandProfile | null;
   onUseIdea: (idea: PostIdea) => void;
 }
 
@@ -24,16 +24,16 @@ export interface PostIdea {
 }
 
 const IDEA_COLORS = [
-  "bg-purple-100 border-purple-200",
-  "bg-cyan-100 border-cyan-200",
-  "bg-amber-100 border-amber-200",
-  "bg-emerald-100 border-emerald-200",
-  "bg-pink-100 border-pink-200",
-  "bg-blue-100 border-blue-200",
+  "bg-violet-100 border-violet-200 dark:bg-violet-950/30 dark:border-violet-800",
+  "bg-cyan-100 border-cyan-200 dark:bg-cyan-950/30 dark:border-cyan-800",
+  "bg-amber-100 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800",
+  "bg-emerald-100 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800",
+  "bg-pink-100 border-pink-200 dark:bg-pink-950/30 dark:border-pink-800",
+  "bg-blue-100 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Bonnes pratiques": "text-purple-600",
+  "Bonnes pratiques": "text-violet-600",
   "Explication / analyse": "text-cyan-600",
   "Liste de conseils/règles/etc": "text-amber-600",
   "Conseil percutant": "text-emerald-600",
@@ -54,6 +54,67 @@ const CATEGORIES = [
   "Innovation",
 ];
 
+// Default ideas that are always shown (sector-agnostic)
+const getDefaultIdeas = (sector?: string): PostIdea[] => {
+  const sectorText = sector || "votre secteur";
+  return [
+    {
+      id: "default-1",
+      title: `Les 5 erreurs que font 90% des professionnels dans ${sectorText} (et comment les éviter)`,
+      category: "Liste de conseils/règles/etc",
+      color: IDEA_COLORS[0],
+    },
+    {
+      id: "default-2",
+      title: `Ce que j'aurais aimé savoir quand j'ai débuté dans ${sectorText}`,
+      category: "Retour d'expérience",
+      color: IDEA_COLORS[1],
+    },
+    {
+      id: "default-3",
+      title: "3 tendances qui vont transformer notre métier en 2026",
+      category: "Tendance du moment",
+      color: IDEA_COLORS[2],
+    },
+    {
+      id: "default-4",
+      title: `Le secret que les meilleurs de ${sectorText} ne partagent jamais`,
+      category: "Conseil percutant",
+      color: IDEA_COLORS[3],
+    },
+    {
+      id: "default-5",
+      title: "Pourquoi j'ai arrêté [pratique courante] et ce qui a changé",
+      category: "Retour d'expérience",
+      color: IDEA_COLORS[4],
+    },
+    {
+      id: "default-6",
+      title: `Guide complet : Comment maîtriser [compétence clé] en 30 jours`,
+      category: "Bonnes pratiques",
+      color: IDEA_COLORS[5],
+    },
+    {
+      id: "default-7",
+      title: "L'outil qui a doublé ma productivité (et que personne n'utilise)",
+      category: "Conseil percutant",
+      color: IDEA_COLORS[0],
+    },
+    {
+      id: "default-8",
+      title: "Mon framework en 4 étapes pour [résoudre problème commun]",
+      category: "Bonnes pratiques",
+      color: IDEA_COLORS[1],
+    },
+    {
+      id: "default-9",
+      title: "J'ai analysé 100 posts LinkedIn viraux : voici ce qui marche vraiment",
+      category: "Explication / analyse",
+      color: IDEA_COLORS[2],
+    },
+  ];
+};
+
 export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
   const { toast } = useToast();
   const [theme, setTheme] = useState("");
@@ -62,12 +123,27 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
   const [savedIdeas, setSavedIdeas] = useState<Set<string>>(new Set());
   const [generationsRemaining, setGenerationsRemaining] = useState(5);
 
+  // Initialize with default ideas on mount
+  useEffect(() => {
+    setIdeas(getDefaultIdeas(brandProfile?.sector));
+  }, [brandProfile?.sector]);
+
   const generateIdeas = async () => {
     if (!theme.trim()) {
       toast({
         title: "Thème requis",
         description: "Veuillez entrer un thème pour générer des idées.",
         variant: "destructive",
+      });
+      return;
+    }
+
+    if (!brandProfile) {
+      // Generate generic ideas based on theme only
+      setIdeas(generateFallbackIdeas(theme));
+      toast({
+        title: "Idées générées",
+        description: `${6} idées basées sur "${theme}"`,
       });
       return;
     }
@@ -143,6 +219,11 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
   };
 
   const generateWithAI = async () => {
+    if (!brandProfile) {
+      setIdeas(generateFallbackIdeas(theme));
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-post', {
         body: {
@@ -221,7 +302,7 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
 
   const generateFallbackIdeas = (themeInput: string): PostIdea[] => {
     const templates = [
-      { template: `Les 5 tendances ${themeInput} qui vont transformer votre métier en 2025`, category: "Tendance du moment" },
+      { template: `Les 5 tendances ${themeInput} qui vont transformer votre métier en 2026`, category: "Tendance du moment" },
       { template: `Pourquoi ${themeInput} change la donne : retour d'expérience après 6 mois`, category: "Retour d'expérience" },
       { template: `10 erreurs que tout le monde fait avec ${themeInput} (et comment les éviter)`, category: "Liste de conseils/règles/etc" },
       { template: `${themeInput} : le guide ultime pour les débutants qui veulent se démarquer`, category: "Bonnes pratiques" },
@@ -249,6 +330,15 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
     });
   };
 
+  const resetToDefault = () => {
+    setIdeas(getDefaultIdeas(brandProfile?.sector));
+    setTheme("");
+    toast({
+      title: "Idées réinitialisées",
+      description: "Les idées par défaut ont été restaurées.",
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -258,136 +348,136 @@ export function IdeasView({ brandProfile, onUseIdea }: IdeasViewProps) {
             Générateur d'idées
           </h1>
           <p className="text-muted-foreground mt-1">
-            Recherche les dernières tendances et génère des idées de posts pertinentes.
+            Trouvez l'inspiration pour vos prochains posts LinkedIn
           </p>
         </div>
-        <Badge variant="outline" className="px-3 py-1.5">
-          <span className="text-primary font-semibold">{generationsRemaining}/5</span>
-          <span className="ml-1 text-muted-foreground">Lancements gratuits</span>
-        </Badge>
-      </div>
-
-      {/* Theme Input */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Ex: IA générative, marketing B2B, leadership, cybersécurité..."
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && generateIdeas()}
-            className="pl-10"
-          />
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="px-3 py-1.5">
+            <Lightbulb className="w-3.5 h-3.5 mr-1 text-amber-500" />
+            <span className="text-foreground font-semibold">{ideas.length}</span>
+            <span className="ml-1 text-muted-foreground">idées</span>
+          </Badge>
         </div>
-        <Button
-          onClick={generateIdeas}
-          disabled={isGenerating || !theme.trim()}
-          className="bg-primary hover:bg-primary/90 gap-2"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Recherche...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Générer des idées
-            </>
-          )}
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={generateIdeas}
-          disabled={isGenerating || !theme.trim()}
-          className="rounded-full"
-        >
-          <RefreshCw className={cn("w-4 h-4", isGenerating && "animate-spin")} />
-        </Button>
-        <div className="flex-1" />
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Heart className="w-5 h-5" />
-        </Button>
       </div>
 
-      {/* Info banner */}
-      <div className="bg-secondary/50 border border-border rounded-lg p-3 flex items-center gap-3">
-        <Search className="w-5 h-5 text-primary" />
-        <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">Recherche intelligente :</span> Les idées sont générées à partir des dernières actualités et tendances du web grâce à Perplexity AI.
-        </p>
-      </div>
+      {/* Search / Generate Section */}
+      <Card className="p-4 border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-lg">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Ex: IA générative, marketing B2B, leadership, cybersécurité..."
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && generateIdeas()}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            onClick={generateIdeas}
+            disabled={isGenerating || !theme.trim()}
+            className="gap-2"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Recherche...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Générer
+              </>
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={resetToDefault}
+            title="Réinitialiser les idées"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {/* Info banner */}
+        <div className="flex items-center gap-2 mt-3 text-sm text-muted-foreground">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <span>
+            Les idées sont générées à partir des dernières tendances web grâce à Perplexity AI.
+          </span>
+        </div>
+      </Card>
 
-      {/* Ideas Grid */}
-      {ideas.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ideas.map((idea) => (
-            <Card
-              key={idea.id}
-              className={cn(
-                "relative p-4 border-2 transition-all hover:shadow-md cursor-pointer group",
-                idea.color
-              )}
+      {/* Ideas Grid - Always has content */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {ideas.map((idea) => (
+          <Card
+            key={idea.id}
+            className={cn(
+              "relative p-4 border-2 transition-all hover:shadow-md cursor-pointer group",
+              idea.color
+            )}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-7 w-7 opacity-60 hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSaveIdea(idea.id);
+              }}
             >
+              <Heart
+                className={cn(
+                  "w-4 h-4",
+                  savedIdeas.has(idea.id) && "fill-red-500 text-red-500"
+                )}
+              />
+            </Button>
+
+            <p className="text-sm font-medium text-foreground pr-8 min-h-[60px]">
+              {idea.title}
+            </p>
+
+            {idea.source && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Source: {idea.source}
+              </p>
+            )}
+
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-current/10">
+              <span className={cn("text-xs font-medium", CATEGORY_COLORS[idea.category] || "text-muted-foreground")}>
+                {idea.category}
+              </span>
               <Button
                 variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 h-7 w-7 opacity-60 hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSaveIdea(idea.id);
-                }}
+                size="sm"
+                className="h-7 text-xs gap-1 hover:bg-white/50 dark:hover:bg-black/20"
+                onClick={() => onUseIdea(idea)}
               >
-                <Heart
-                  className={cn(
-                    "w-4 h-4",
-                    savedIdeas.has(idea.id) && "fill-red-500 text-red-500"
-                  )}
-                />
+                Utiliser
+                <ExternalLink className="w-3 h-3" />
               </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
 
-              <p className="text-sm font-medium text-foreground pr-8 min-h-[60px]">
-                {idea.title}
-              </p>
-
-              {idea.source && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Source: {idea.source}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-black/10">
-                <span className={cn("text-xs font-medium", CATEGORY_COLORS[idea.category] || "text-muted-foreground")}>
-                  {idea.category}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs gap-1 hover:bg-white/50"
-                  onClick={() => onUseIdea(idea)}
-                >
-                  Utiliser
-                  <ExternalLink className="w-3 h-3" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-muted-foreground" />
+      {/* Tip Card */}
+      <Card className="p-4 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Lightbulb className="w-4 h-4 text-primary" />
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            Aucune idée générée
-          </h3>
-          <p className="text-muted-foreground max-w-md">
-            Entrez un thème ci-dessus (ex: "intelligence artificielle", "recrutement", "développement durable") 
-            et cliquez sur "Générer des idées" pour découvrir les dernières tendances.
-          </p>
+          <div>
+            <p className="text-sm font-medium text-foreground">Astuce</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Cliquez sur "Utiliser" pour transformer une idée en post. Vous pouvez aussi sauvegarder vos idées préférées avec le cœur ❤️
+            </p>
+          </div>
         </div>
-      )}
+      </Card>
     </div>
   );
 }

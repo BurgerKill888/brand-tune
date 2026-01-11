@@ -377,6 +377,116 @@ export type Database = {
           },
         ]
       }
+      watch_topics: {
+        Row: {
+          id: string
+          user_id: string
+          brand_profile_id: string | null
+          name: string
+          keywords: string[]
+          description: string | null
+          is_scheduled: boolean
+          schedule_time: string | null
+          schedule_days: string[]
+          last_run_at: string | null
+          relevance_filter: string
+          objective_filter: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          brand_profile_id?: string | null
+          name: string
+          keywords?: string[]
+          description?: string | null
+          is_scheduled?: boolean
+          schedule_time?: string | null
+          schedule_days?: string[]
+          last_run_at?: string | null
+          relevance_filter?: string
+          objective_filter?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          brand_profile_id?: string | null
+          name?: string
+          keywords?: string[]
+          description?: string | null
+          is_scheduled?: boolean
+          schedule_time?: string | null
+          schedule_days?: string[]
+          last_run_at?: string | null
+          relevance_filter?: string
+          objective_filter?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_topics_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_history: {
+        Row: {
+          id: string
+          user_id: string
+          watch_topic_id: string | null
+          brand_profile_id: string | null
+          query: string
+          items: Json
+          citations: string[]
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          watch_topic_id?: string | null
+          brand_profile_id?: string | null
+          query: string
+          items?: Json
+          citations?: string[]
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          watch_topic_id?: string | null
+          brand_profile_id?: string | null
+          query?: string
+          items?: Json
+          citations?: string[]
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_history_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watch_history_watch_topic_id_fkey"
+            columns: ["watch_topic_id"]
+            isOneToOne: false
+            referencedRelation: "watch_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

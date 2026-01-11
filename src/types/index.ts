@@ -79,7 +79,7 @@ export interface OnboardingStep {
   completed: boolean;
 }
 
-export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'my-posts' | 'metrics' | 'settings' | 'inspiration' | 'ideas';
+export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'my-posts' | 'metrics' | 'settings' | 'ideas' | 'studio';
 
 export interface SavedInspiration {
   id: string;
@@ -120,4 +120,35 @@ export interface InspirationData {
     source: string;
     angle: string;
   }>;
+}
+
+// Watch Topics - Sujets de veille enregistrés
+export interface WatchTopic {
+  id: string;
+  userId: string;
+  brandProfileId?: string;
+  name: string;
+  keywords: string[];
+  description?: string;
+  isScheduled: boolean;
+  scheduleTime?: string; // Format HH:MM
+  scheduleDays: string[]; // ['monday', 'tuesday', ...]
+  lastRunAt?: Date;
+  relevanceFilter: 'all' | 'high' | 'medium' | 'low';
+  objectiveFilter: 'all' | 'reach' | 'credibility' | 'lead' | 'engagement';
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Watch History - Historique des recherches
+export interface WatchHistory {
+  id: string;
+  userId: string;
+  watchTopicId?: string;
+  brandProfileId?: string;
+  query: string;
+  items: WatchItem[];
+  citations: string[];
+  createdAt: Date;
 }

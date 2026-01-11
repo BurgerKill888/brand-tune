@@ -8,8 +8,8 @@ import { PostsView } from "@/components/views/PostsView";
 import { MyPostsView } from "@/components/views/MyPostsView";
 import { MetricsView } from "@/components/views/MetricsView";
 import { SettingsView } from "@/components/views/SettingsView";
-import { InspirationView } from "@/components/views/InspirationView";
 import { IdeasView, PostIdea } from "@/components/views/IdeasView";
+import { StudioView } from "@/components/views/StudioView";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAppStore } from "@/store/appStore";
 import { AppView, BrandProfile, Post } from "@/types";
@@ -61,16 +61,17 @@ const Index = () => {
     const { error } = await saveBrandProfile(profile);
     if (!error) {
       setShowOnboarding(false);
-      setCurrentView('inspiration'); // Navigate to inspiration after onboarding
+      setCurrentView('ideas'); // Navigate to ideas after onboarding
       toast({
         title: "Profil créé avec succès ! 🎉",
-        description: "Découvrez vos inspirations personnalisées.",
+        description: "Découvrez vos idées de contenu personnalisées.",
       });
     }
   };
 
   const handleNavigate = (view: AppView) => {
-    if (!brandProfile && view !== 'dashboard' && view !== 'settings') {
+    // Allow access to ideas and studio without a profile
+    if (!brandProfile && view !== 'dashboard' && view !== 'settings' && view !== 'ideas' && view !== 'studio') {
       toast({
         title: "Configuration requise",
         description: "Veuillez d'abord configurer votre profil éditorial.",
@@ -136,20 +137,19 @@ const Index = () => {
             onNavigate={handleNavigate}
           />
         );
-      case 'inspiration':
-        return brandProfile ? (
-          <InspirationView
-            brandProfile={brandProfile}
-            onNavigateToPost={() => handleNavigate('posts')}
-          />
-        ) : null;
       case 'ideas':
-        return brandProfile ? (
+        return (
           <IdeasView
             brandProfile={brandProfile}
             onUseIdea={handleUseIdea}
           />
-        ) : null;
+        );
+      case 'studio':
+        return (
+          <StudioView
+            brandProfile={brandProfile}
+          />
+        );
       case 'watch':
         return brandProfile ? (
           <WatchView
@@ -215,6 +215,7 @@ const Index = () => {
             brandProfile={brandProfile}
             onSignOut={handleSignOut}
             userEmail={user?.email}
+            onSaveBrandProfile={saveBrandProfile}
           />
         );
       default:

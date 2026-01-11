@@ -31,30 +31,45 @@ serve(async (req) => {
     console.log('Perplexity watch query:', query);
     console.log('Brand context:', brandProfile.companyName, brandProfile.sector);
 
-    const systemPrompt = `Tu es un expert en veille stratégique LinkedIn pour les entreprises B2B.
-    
+    const systemPrompt = `Tu es un expert en veille stratégique et actualités pour les professionnels LinkedIn.
+
 Contexte de la marque:
 - Entreprise: ${brandProfile.companyName}
 - Secteur: ${brandProfile.sector}
 - Cibles: ${brandProfile.targets.join(', ')}
 - Objectifs: ${brandProfile.businessObjectives.join(', ')}
 
-Tu dois rechercher des actualités, tendances et informations pertinentes pour créer du contenu LinkedIn engageant.
+MISSION: Recherche les VRAIES actualités récentes (derniers jours/semaine) sur le sujet demandé.
+Tu DOIS citer des sources RÉELLES avec leurs URLs complètes.
 
-Retourne EXACTEMENT 5 résultats au format JSON:
+Pour chaque actualité trouvée, fournis:
+1. Le titre EXACT de l'article/actualité
+2. Un résumé factuel en 2-3 phrases
+3. Le nom du média/source (ex: Les Echos, TechCrunch, LinkedIn News, etc.)
+4. L'URL COMPLÈTE et VALIDE de l'article
+5. Un angle éditorial pour créer un post LinkedIn percutant
+6. La pertinence pour cette marque (high/medium/low)
+7. L'objectif business visé (reach/credibility/lead/engagement)
+8. Une alerte si l'info est sensible ou à traiter avec précaution
+
+Retourne EXACTEMENT 5 à 8 résultats au format JSON strict:
 {
   "items": [
     {
-      "title": "Titre accrocheur de l'actualité",
-      "summary": "Résumé en 2-3 phrases",
-      "source": "Nom de la source",
-      "url": "URL de la source si disponible",
-      "angle": "Angle éditorial suggéré pour un post LinkedIn",
-      "relevance": "high" | "medium" | "low",
-      "objective": "reach" | "credibility" | "lead" | "engagement"
+      "title": "Titre exact de l'article",
+      "summary": "Résumé factuel de l'actualité",
+      "source": "Nom du média",
+      "url": "https://url-complete-de-larticle.com/...",
+      "publishedDate": "Date de publication si connue",
+      "angle": "Angle éditorial suggéré pour un post LinkedIn engageant",
+      "relevance": "high",
+      "objective": "reach",
+      "alert": "Alerte optionnelle si sujet sensible"
     }
   ]
-}`;
+}
+
+IMPORTANT: Ne fournis QUE des actualités RÉELLES avec des sources vérifiables.`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -66,9 +81,11 @@ Retourne EXACTEMENT 5 résultats au format JSON:
         model: 'sonar',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Recherche les dernières actualités et tendances sur: ${query}` }
+          { role: 'user', content: `Recherche les dernières actualités et tendances récentes (cette semaine) sur: "${query}". Fournis des sources réelles avec leurs URLs complètes.` }
         ],
         search_recency_filter: 'week',
+        return_citations: true,
+        return_related_questions: false,
       }),
     });
 
@@ -88,6 +105,7 @@ Retourne EXACTEMENT 5 résultats au format JSON:
 
     const data = await response.json();
     console.log('Perplexity response received');
+    console.log('Citations count:', data.citations?.length || 0);
 
     const content = data.choices[0]?.message?.content || '';
     const citations = data.citations || [];
@@ -100,31 +118,85 @@ Retourne EXACTEMENT 5 résultats au format JSON:
         const parsed = JSON.parse(jsonMatch[0]);
         items = parsed.items || [];
         
-        // Enrich with citations if available
-        items = items.map((item: any, index: number) => ({
-          ...item,
-          url: item.url || citations[index] || '',
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-        }));
+        // Enrich items with citations and validate URLs
+        items = items.map((item: any, index: number) => {
+          // Try to get URL from item, then from citations
+          let url = item.url || '';
+          
+          // If URL is empty or invalid, try to use citation
+          if (!url || !url.startsWith('http')) {
+            url = citations[index] || '';
+          }
+          
+          // Extract domain for source name if not provided
+          let source = item.source || '';
+          if (!source && url) {
+            try {
+              const urlObj = new URL(url);
+              source = urlObj.hostname.replace('www.', '');
+            } catch {
+              source = 'Source web';
+            }
+          }
+          
+          return {
+            ...item,
+            id: crypto.randomUUID(),
+            url: url,
+            source: source,
+            publishedDate: item.publishedDate || null,
+            createdAt: new Date().toISOString(),
+          };
+        });
       }
     } catch (parseError) {
       console.error('Failed to parse Perplexity response:', parseError);
-      // Return raw content as fallback
-      items = [{
-        id: crypto.randomUUID(),
-        title: 'Résultat de recherche',
-        summary: content.slice(0, 500),
-        source: 'Perplexity AI',
-        url: citations[0] || '',
-        angle: 'À définir',
-        relevance: 'medium',
-        objective: 'reach',
-        createdAt: new Date().toISOString(),
-      }];
+      console.log('Raw content:', content.slice(0, 500));
+      
+      // Create items from citations as fallback
+      if (citations.length > 0) {
+        items = citations.slice(0, 5).map((citationUrl: string, index: number) => {
+          let sourceName = 'Source web';
+          try {
+            const urlObj = new URL(citationUrl);
+            sourceName = urlObj.hostname.replace('www.', '');
+          } catch {}
+          
+          return {
+            id: crypto.randomUUID(),
+            title: `Actualité #${index + 1} sur "${query}"`,
+            summary: content.slice(index * 200, (index + 1) * 200) || 'Voir la source pour plus de détails.',
+            source: sourceName,
+            url: citationUrl,
+            angle: 'À définir selon votre expertise',
+            relevance: 'medium' as const,
+            objective: 'reach' as const,
+            createdAt: new Date().toISOString(),
+          };
+        });
+      } else {
+        items = [{
+          id: crypto.randomUUID(),
+          title: 'Résultat de recherche',
+          summary: content.slice(0, 500),
+          source: 'Perplexity AI',
+          url: '',
+          angle: 'À définir',
+          relevance: 'medium',
+          objective: 'reach',
+          createdAt: new Date().toISOString(),
+        }];
+      }
     }
 
-    return new Response(JSON.stringify({ items, citations }), {
+    console.log(`Returning ${items.length} items`);
+    
+    return new Response(JSON.stringify({ 
+      items, 
+      citations,
+      query,
+      timestamp: new Date().toISOString()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

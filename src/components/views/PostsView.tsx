@@ -12,7 +12,9 @@ import {
   Zap,
   ThumbsUp,
   AlertCircle,
-  Save
+  Save,
+  Linkedin,
+  Send
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ import { Post, BrandProfile } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLinkedIn } from "@/hooks/useLinkedIn";
 
 interface PostsViewProps {
   brandProfile: BrandProfile;
@@ -40,10 +43,12 @@ const LENGTH_OPTIONS = [
 
 export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: PostsViewProps) {
   const { toast } = useToast();
+  const linkedin = useLinkedIn();
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [selectedLength, setSelectedLength] = useState<Post['length']>('medium');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [topic, setTopic] = useState("");
   const [includeCta, setIncludeCta] = useState(true);
@@ -148,6 +153,26 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
 
   const handleRegenerate = async () => {
     await handleGenerate();
+  };
+
+  const handlePublishToLinkedIn = async () => {
+    if (!currentPost) return;
+    
+    if (!linkedin.isConnected) {
+      linkedin.connect();
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const result = await linkedin.publishPost(currentPost.content);
+      if (result.success) {
+        onUpdatePost(currentPost.id, { status: 'published' });
+        setCurrentPost({ ...currentPost, status: 'published' });
+      }
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -268,7 +293,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                 Aperçu du post
               </CardTitle>
               {currentPost && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -296,7 +321,7 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                     )}
                   </Button>
                   <Button
-                    variant="premium"
+                    variant="secondary"
                     size="sm"
                     onClick={handleSave}
                     disabled={isSaving}
@@ -307,6 +332,19 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                       <Save className="w-4 h-4 mr-2" />
                     )}
                     Sauvegarder
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handlePublishToLinkedIn}
+                    disabled={isPublishing}
+                    className="bg-[#0A66C2] hover:bg-[#004182] text-white"
+                  >
+                    {isPublishing ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Linkedin className="w-4 h-4 mr-2" />
+                    )}
+                    {linkedin.isConnected ? 'Publier' : 'Connecter LinkedIn'}
                   </Button>
                 </div>
               )}

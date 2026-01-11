@@ -6,21 +6,24 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   User, 
   Bell, 
-  Palette, 
   Shield, 
   Download, 
   Trash2,
   LogOut,
-  Save,
   Mail,
   Globe,
-  Clock
+  Clock,
+  Linkedin,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { BrandProfile } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useLinkedIn } from "@/hooks/useLinkedIn";
 
 interface SettingsViewProps {
   brandProfile: BrandProfile | null;
@@ -30,6 +33,7 @@ interface SettingsViewProps {
 
 export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsViewProps) {
   const { toast } = useToast();
+  const linkedin = useLinkedIn();
   const [notifications, setNotifications] = useState({
     emailDigest: true,
     postReminders: true,
@@ -114,6 +118,75 @@ export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsVie
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* LinkedIn Connection */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Linkedin className="w-5 h-5 text-[#0A66C2]" />
+            <CardTitle>Connexion LinkedIn</CardTitle>
+          </div>
+          <CardDescription>Publiez directement sur LinkedIn depuis l'application</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {linkedin.loading ? (
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-secondary/50">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-muted-foreground">Vérification de la connexion...</span>
+            </div>
+          ) : linkedin.isConnected && linkedin.profile ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={linkedin.profile.picture} />
+                    <AvatarFallback className="bg-[#0A66C2] text-white">
+                      {linkedin.profile.name?.charAt(0) || 'L'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground">{linkedin.profile.name}</p>
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">{linkedin.profile.email}</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => linkedin.disconnect()}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Déconnecter
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                ✅ Vous pouvez publier vos posts directement sur LinkedIn depuis la page "Posts"
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border">
+                <div>
+                  <p className="font-medium text-foreground">LinkedIn non connecté</p>
+                  <p className="text-sm text-muted-foreground">
+                    Connectez votre compte pour publier directement
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => linkedin.connect()}
+                  className="bg-[#0A66C2] hover:bg-[#004182]"
+                >
+                  <Linkedin className="w-4 h-4 mr-2" />
+                  Connecter LinkedIn
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

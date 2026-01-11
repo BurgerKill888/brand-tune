@@ -79,4 +79,45 @@ export interface OnboardingStep {
   completed: boolean;
 }
 
-export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'metrics' | 'settings';
+export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'metrics' | 'settings' | 'inspiration';
+
+export interface SavedInspiration {
+  id: string;
+  userId: string;
+  brandProfileId?: string;
+  type: 'theme' | 'account' | 'news' | 'content_idea';
+  title: string;
+  description?: string;
+  source?: string;
+  url?: string;
+  metadata?: Record<string, any>;
+  isPinned: boolean;
+  createdAt: Date;
+}
+
+export interface DailyTheme {
+  id: string;
+  title: string;
+  description: string;
+  angle: string;
+  hashtags: string[];
+  relevance: string;
+}
+
+export interface LinkedInAccount {
+  name: string;
+  role: string;
+  reason: string;
+  topics: string[];
+}
+
+export interface InspirationData {
+  themes: DailyTheme[];
+  accounts: LinkedInAccount[];
+  news: Array<{
+    title: string;
+    summary: string;
+    source: string;
+    angle: string;
+  }>;
+}

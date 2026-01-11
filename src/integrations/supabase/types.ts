@@ -217,6 +217,56 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_inspirations: {
+        Row: {
+          brand_profile_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_pinned: boolean | null
+          metadata: Json | null
+          source: string | null
+          title: string
+          type: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          brand_profile_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          metadata?: Json | null
+          source?: string | null
+          title: string
+          type: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          brand_profile_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          metadata?: Json | null
+          source?: string | null
+          title?: string
+          type?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_inspirations_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       watch_items: {
         Row: {
           alert: string | null

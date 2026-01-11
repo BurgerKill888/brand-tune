@@ -7,6 +7,7 @@ import { CalendarView } from "@/components/views/CalendarView";
 import { PostsView } from "@/components/views/PostsView";
 import { MetricsView } from "@/components/views/MetricsView";
 import { SettingsView } from "@/components/views/SettingsView";
+import { InspirationView } from "@/components/views/InspirationView";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAppStore } from "@/store/appStore";
 import { AppView, BrandProfile, Post } from "@/types";
@@ -57,10 +58,10 @@ const Index = () => {
     const { error } = await saveBrandProfile(profile);
     if (!error) {
       setShowOnboarding(false);
-      setCurrentView('dashboard');
+      setCurrentView('inspiration'); // Navigate to inspiration after onboarding
       toast({
         title: "Profil créé avec succès ! 🎉",
-        description: "Votre stratégie éditoriale est prête.",
+        description: "Découvrez vos inspirations personnalisées.",
       });
     }
   };
@@ -113,6 +114,13 @@ const Index = () => {
             onNavigate={handleNavigate}
           />
         );
+      case 'inspiration':
+        return brandProfile ? (
+          <InspirationView
+            brandProfile={brandProfile}
+            onNavigateToPost={() => handleNavigate('posts')}
+          />
+        ) : null;
       case 'watch':
         return brandProfile ? (
           <WatchView

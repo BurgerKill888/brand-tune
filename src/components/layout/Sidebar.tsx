@@ -8,7 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
-  LogOut
+  LogOut,
+  Lightbulb
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'dashboard' as AppView, label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'inspiration' as AppView, label: 'Inspiration', icon: Lightbulb },
   { id: 'watch' as AppView, label: 'Veille', icon: Compass },
   { id: 'calendar' as AppView, label: 'Calendrier', icon: Calendar },
   { id: 'posts' as AppView, label: 'Posts', icon: FileEdit },
@@ -49,8 +51,8 @@ export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: Side
           </div>
           {!collapsed && (
             <div className="animate-fade-in">
-              <h1 className="font-display font-bold text-lg text-foreground">ContentAI</h1>
-              <p className="text-xs text-muted-foreground">LinkedIn Strategy</p>
+              <h1 className="font-display font-bold text-lg text-foreground">True Content</h1>
+              <p className="text-xs text-muted-foreground">Contenu Authentique</p>
             </div>
           )}
         </div>

@@ -8,15 +8,17 @@ interface MainLayoutProps {
   currentView: AppView;
   onNavigate: (view: AppView) => void;
   hasProfile: boolean;
+  onSignOut?: () => void;
 }
 
-export function MainLayout({ children, currentView, onNavigate, hasProfile }: MainLayoutProps) {
+export function MainLayout({ children, currentView, onNavigate, hasProfile, onSignOut }: MainLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar 
         currentView={currentView} 
         onNavigate={onNavigate} 
         hasProfile={hasProfile}
+        onSignOut={onSignOut}
       />
       <main className={cn(
         "min-h-screen transition-all duration-300",

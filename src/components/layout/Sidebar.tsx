@@ -6,7 +6,9 @@ import {
   Settings,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,6 +19,7 @@ interface SidebarProps {
   currentView: AppView;
   onNavigate: (view: AppView) => void;
   hasProfile: boolean;
+  onSignOut?: () => void;
 }
 
 const navItems = [
@@ -24,10 +27,11 @@ const navItems = [
   { id: 'watch' as AppView, label: 'Veille', icon: Compass },
   { id: 'calendar' as AppView, label: 'Calendrier', icon: Calendar },
   { id: 'posts' as AppView, label: 'Posts', icon: FileEdit },
+  { id: 'metrics' as AppView, label: 'Métriques', icon: BarChart3 },
   { id: 'settings' as AppView, label: 'Paramètres', icon: Settings },
 ];
 
-export function Sidebar({ currentView, onNavigate, hasProfile }: SidebarProps) {
+export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -79,8 +83,22 @@ export function Sidebar({ currentView, onNavigate, hasProfile }: SidebarProps) {
         })}
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="p-4 border-t border-border">
+      {/* Bottom Actions */}
+      <div className="p-4 border-t border-border space-y-2">
+        {onSignOut && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSignOut}
+            className={cn(
+              "w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+              collapsed ? "justify-center px-3" : "justify-start"
+            )}
+          >
+            <LogOut className="w-4 h-4" />
+            {!collapsed && <span className="ml-2">Déconnexion</span>}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

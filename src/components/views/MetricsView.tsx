@@ -14,11 +14,6 @@ import {
 } from "lucide-react";
 import { Post, CalendarItem } from "@/types";
 import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent 
-} from "@/components/ui/chart";
-import { 
   BarChart, 
   Bar, 
   XAxis, 
@@ -27,10 +22,9 @@ import {
   PieChart, 
   Pie, 
   Cell,
-  LineChart,
-  Line,
   Area,
-  AreaChart
+  AreaChart,
+  Tooltip
 } from "recharts";
 
 interface MetricsViewProps {
@@ -174,7 +168,13 @@ export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
                   </defs>
                   <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
                   <Area 
                     type="monotone" 
                     dataKey="vues" 
@@ -203,7 +203,13 @@ export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
                 <BarChart data={engagementData}>
                   <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
                   <Bar dataKey="likes" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="commentaires" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="partages" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
@@ -256,7 +262,13 @@ export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }} 
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -301,7 +313,13 @@ export function MetricsView({ posts, calendarItems }: MetricsViewProps) {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }} 
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>

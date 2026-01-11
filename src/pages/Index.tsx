@@ -8,6 +8,7 @@ import { PostsView } from "@/components/views/PostsView";
 import { MetricsView } from "@/components/views/MetricsView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { InspirationView } from "@/components/views/InspirationView";
+import { IdeasView, PostIdea } from "@/components/views/IdeasView";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAppStore } from "@/store/appStore";
 import { AppView, BrandProfile, Post } from "@/types";
@@ -21,7 +22,7 @@ import { usePosts } from "@/hooks/usePosts";
 const Index = () => {
   const { toast } = useToast();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { currentView, setCurrentView } = useAppStore();
+  const { currentView, setCurrentView, setPrefillPostData } = useAppStore();
 
   // Brand profile hook
   const { brandProfile, loading: profileLoading, saveBrandProfile } = useBrandProfile();
@@ -78,6 +79,14 @@ const Index = () => {
     setCurrentView(view);
   };
 
+  const handleUseIdea = (idea: PostIdea) => {
+    setPrefillPostData({
+      topic: idea.title,
+      category: idea.category,
+    });
+    setCurrentView('posts');
+  };
+
   const handleSignOut = async () => {
     await signOut();
     toast({
@@ -119,6 +128,13 @@ const Index = () => {
           <InspirationView
             brandProfile={brandProfile}
             onNavigateToPost={() => handleNavigate('posts')}
+          />
+        ) : null;
+      case 'ideas':
+        return brandProfile ? (
+          <IdeasView
+            brandProfile={brandProfile}
+            onUseIdea={handleUseIdea}
           />
         ) : null;
       case 'watch':

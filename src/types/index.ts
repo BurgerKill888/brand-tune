@@ -79,7 +79,7 @@ export interface OnboardingStep {
   completed: boolean;
 }
 
-export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'metrics' | 'settings' | 'inspiration';
+export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'metrics' | 'settings' | 'inspiration' | 'ideas';
 
 export interface SavedInspiration {
   id: string;

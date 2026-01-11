@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,24 @@ export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsVie
     weeklyReport: false,
     trendAlerts: true,
   });
+
+  const linkedinRedirectUrl = `${window.location.origin}/linkedin-callback`;
+
+  const handleCopyLinkedInRedirectUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(linkedinRedirectUrl);
+      toast({
+        title: "Copié",
+        description: "L’URL de redirection LinkedIn a été copiée.",
+      });
+    } catch {
+      toast({
+        title: "Impossible de copier",
+        description: "Copie manuelle requise (votre navigateur bloque la copie).",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleExportData = () => {
     if (!brandProfile) {
@@ -125,7 +143,7 @@ export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsVie
       <Card className="border-border/50">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Linkedin className="w-5 h-5 text-[#0A66C2]" />
+            <Linkedin className="w-5 h-5 text-primary" />
             <CardTitle>Connexion LinkedIn</CardTitle>
           </div>
           <CardDescription>Publiez directement sur LinkedIn depuis l'application</CardDescription>
@@ -138,24 +156,24 @@ export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsVie
             </div>
           ) : linkedin.isConnected && linkedin.profile ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={linkedin.profile.picture} />
-                    <AvatarFallback className="bg-[#0A66C2] text-white">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
                       {linkedin.profile.name?.charAt(0) || 'L'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-foreground">{linkedin.profile.name}</p>
-                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <CheckCircle className="w-4 h-4 text-primary" />
                     </div>
                     <p className="text-sm text-muted-foreground">{linkedin.profile.email}</p>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => linkedin.disconnect()}
                   className="text-destructive hover:text-destructive"
@@ -170,20 +188,27 @@ export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsVie
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border">
+              <div className="flex items-center justify-between gap-4 p-4 rounded-lg bg-secondary/50 border border-border">
                 <div>
                   <p className="font-medium text-foreground">LinkedIn non connecté</p>
                   <p className="text-sm text-muted-foreground">
                     Connectez votre compte pour publier directement
                   </p>
                 </div>
-                <Button 
-                  onClick={() => linkedin.connect()}
-                  className="bg-[#0A66C2] hover:bg-[#004182]"
-                >
+                <Button onClick={() => linkedin.connect()}>
                   <Linkedin className="w-4 h-4 mr-2" />
                   Connecter LinkedIn
                 </Button>
+              </div>
+
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+                <p className="text-muted-foreground">Redirect URL à enregistrer dans LinkedIn :</p>
+                <div className="mt-2 flex items-start justify-between gap-3">
+                  <code className="text-foreground break-all">{linkedinRedirectUrl}</code>
+                  <Button variant="outline" size="sm" onClick={handleCopyLinkedInRedirectUrl}>
+                    Copier
+                  </Button>
+                </div>
               </div>
             </div>
           )}
@@ -355,24 +380,25 @@ export function SettingsView({ brandProfile, onSignOut, userEmail }: SettingsVie
   );
 }
 
-function NotificationToggle({ 
-  label, 
-  description, 
-  checked, 
-  onChange 
-}: { 
-  label: string; 
-  description: string; 
-  checked: boolean; 
+type NotificationToggleProps = {
+  label: string;
+  description: string;
+  checked: boolean;
   onChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="font-medium text-foreground">{label}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
+};
+
+const NotificationToggle = forwardRef<HTMLDivElement, NotificationToggleProps>(
+  ({ label, description, checked, onChange }, ref) => {
+    return (
+      <div ref={ref} className="flex items-center justify-between">
+        <div>
+          <p className="font-medium text-foreground">{label}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        <Switch checked={checked} onCheckedChange={onChange} />
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
-}
+    );
+  }
+);
+
+NotificationToggle.displayName = 'NotificationToggle';

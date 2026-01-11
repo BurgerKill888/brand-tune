@@ -79,4 +79,4 @@ export interface OnboardingStep {
   completed: boolean;
 }
 
-export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'settings';
+export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'metrics' | 'settings';

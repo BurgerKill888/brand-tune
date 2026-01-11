@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardView } from "@/components/views/DashboardView";
 import { OnboardingView } from "@/components/views/OnboardingView";
 import { WatchView } from "@/components/views/WatchView";
 import { CalendarView } from "@/components/views/CalendarView";
 import { PostsView } from "@/components/views/PostsView";
+import { MetricsView } from "@/components/views/MetricsView";
+import { SettingsView } from "@/components/views/SettingsView";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAppStore } from "@/store/appStore";
 import { AppView, BrandProfile, Post } from "@/types";
@@ -64,7 +66,7 @@ const Index = () => {
   };
 
   const handleNavigate = (view: AppView) => {
-    if (!brandProfile && view !== 'dashboard') {
+    if (!brandProfile && view !== 'dashboard' && view !== 'settings') {
       toast({
         title: "Configuration requise",
         description: "Veuillez d'abord configurer votre profil éditorial.",
@@ -73,6 +75,14 @@ const Index = () => {
       return;
     }
     setCurrentView(view);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Déconnexion réussie",
+      description: "À bientôt !",
+    });
   };
 
   const handleAddPost = async (post: Post) => {
@@ -130,16 +140,20 @@ const Index = () => {
             onUpdatePost={handleUpdatePost}
           />
         ) : null;
+      case 'metrics':
+        return (
+          <MetricsView
+            posts={posts}
+            calendarItems={calendarItems}
+          />
+        );
       case 'settings':
         return (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-display font-bold text-foreground mb-2">
-              Paramètres
-            </h2>
-            <p className="text-muted-foreground">
-              Page en cours de développement
-            </p>
-          </div>
+          <SettingsView
+            brandProfile={brandProfile}
+            onSignOut={handleSignOut}
+            userEmail={user?.email}
+          />
         );
       default:
         return null;
@@ -151,6 +165,7 @@ const Index = () => {
       currentView={currentView}
       onNavigate={handleNavigate}
       hasProfile={!!brandProfile}
+      onSignOut={handleSignOut}
     >
       {renderView()}
     </MainLayout>

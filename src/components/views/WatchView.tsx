@@ -48,7 +48,8 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem, onSaveItem
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('analyze-watch', {
+      // Use Perplexity-powered watch function
+      const { data, error: fnError } = await supabase.functions.invoke('perplexity-watch', {
         body: {
           query: searchQuery,
           brandProfile: {
@@ -56,7 +57,6 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem, onSaveItem
             sector: brandProfile.sector,
             targets: brandProfile.targets,
             businessObjectives: brandProfile.businessObjectives,
-            values: brandProfile.values,
           }
         }
       });
@@ -85,7 +85,7 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem, onSaveItem
 
       toast({
         title: `${newItems.length} tendances trouvées`,
-        description: "L'IA a analysé les sujets pertinents pour votre marque.",
+        description: "Perplexity a analysé les sujets pertinents pour votre marque.",
       });
     } catch (err: unknown) {
       console.error("Watch analysis error:", err);
@@ -165,7 +165,7 @@ export function WatchView({ brandProfile, watchItems, onAddWatchItem, onSaveItem
               ) : (
                 <Sparkles className="w-4 h-4 mr-2" />
               )}
-              Analyser avec l'IA
+              Rechercher avec Perplexity
             </Button>
           </div>
           

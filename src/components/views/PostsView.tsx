@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Save,
   Linkedin,
-  Send
+  Clock,
+  Eye
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,11 +23,15 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Post, BrandProfile } from "@/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLinkedIn } from "@/hooks/useLinkedIn";
+import { useScheduledPosts } from "@/hooks/useScheduledPosts";
+import { LinkedInPreview } from "@/components/posts/LinkedInPreview";
+import { SchedulePostDialog } from "@/components/posts/SchedulePostDialog";
 
 interface PostsViewProps {
   brandProfile: BrandProfile;
@@ -44,11 +49,15 @@ const LENGTH_OPTIONS = [
 export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: PostsViewProps) {
   const { toast } = useToast();
   const linkedin = useLinkedIn();
+  const { scheduledPosts, schedulePost } = useScheduledPosts(brandProfile.id);
   const [currentPost, setCurrentPost] = useState<Post | null>(null);
   const [selectedLength, setSelectedLength] = useState<Post['length']>('medium');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [topic, setTopic] = useState("");
   const [includeCta, setIncludeCta] = useState(true);
@@ -175,6 +184,20 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
     }
   };
 
+  const handleSchedulePost = async (scheduledAt: Date) => {
+    if (!currentPost) return;
+    
+    setIsScheduling(true);
+    try {
+      const success = await schedulePost(currentPost.content, scheduledAt, currentPost.id);
+      if (success) {
+        setShowScheduleDialog(false);
+      }
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
@@ -297,6 +320,14 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => setShowPreview(!showPreview)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {showPreview ? 'Éditer' : 'Prévisualiser'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleRegenerate}
                     disabled={isGenerating}
                   >
@@ -333,19 +364,6 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
                     )}
                     Sauvegarder
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handlePublishToLinkedIn}
-                    disabled={isPublishing}
-                    className="bg-[#0A66C2] hover:bg-[#004182] text-white"
-                  >
-                    {isPublishing ? (
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Linkedin className="w-4 h-4 mr-2" />
-                    )}
-                    {linkedin.isConnected ? 'Publier' : 'Connecter LinkedIn'}
-                  </Button>
                 </div>
               )}
             </div>
@@ -364,13 +382,48 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
               </div>
             ) : (
               <>
-                {/* Post Content */}
-                <div className="p-6 rounded-xl bg-secondary/30 border border-border">
-                  <Textarea
-                    value={currentPost.content}
-                    onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
-                    className="min-h-[300px] resize-none bg-transparent border-none p-0 focus-visible:ring-0 text-foreground whitespace-pre-wrap"
-                  />
+                {/* Toggle between Edit and Preview */}
+                {showPreview ? (
+                  <div className="py-4">
+                    <LinkedInPreview
+                      content={currentPost.content}
+                      authorName={brandProfile.companyName}
+                      authorTitle={`${brandProfile.sector} · ${brandProfile.tone}`}
+                    />
+                  </div>
+                ) : (
+                  /* Post Content */
+                  <div className="p-6 rounded-xl bg-secondary/30 border border-border">
+                    <Textarea
+                      value={currentPost.content}
+                      onChange={(e) => setCurrentPost({ ...currentPost, content: e.target.value })}
+                      className="min-h-[300px] resize-none bg-transparent border-none p-0 focus-visible:ring-0 text-foreground whitespace-pre-wrap"
+                    />
+                  </div>
+                )}
+
+                {/* LinkedIn Actions */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    onClick={handlePublishToLinkedIn}
+                    disabled={isPublishing}
+                  >
+                    {isPublishing ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Linkedin className="w-4 h-4 mr-2" />
+                    )}
+                    {linkedin.isConnected ? 'Publier maintenant' : 'Connecter LinkedIn'}
+                  </Button>
+                  {linkedin.isConnected && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowScheduleDialog(true)}
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Programmer
+                    </Button>
+                  )}
                 </div>
 
                 {/* Stats Row */}
@@ -489,6 +542,14 @@ export function PostsView({ brandProfile, posts, onAddPost, onUpdatePost }: Post
           </CardContent>
         </Card>
       )}
+
+      {/* Schedule Dialog */}
+      <SchedulePostDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        onSchedule={handleSchedulePost}
+        isLoading={isScheduling}
+      />
     </div>
   );
 }

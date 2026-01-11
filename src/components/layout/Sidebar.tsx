@@ -1,70 +1,82 @@
 import { 
   LayoutDashboard, 
-  Compass, 
-  Calendar, 
-  FileEdit, 
-  Settings,
+  Lightbulb,
+  PenLine,
+  FileText,
+  Calendar,
+  Newspaper,
+  User,
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  BarChart3,
   LogOut,
-  Zap,
-  FolderOpen,
   Circle,
-  Camera
+  Edit3,
+  TrendingUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AppView } from "@/types";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
   currentView: AppView;
   onNavigate: (view: AppView) => void;
   hasProfile: boolean;
   onSignOut?: () => void;
+  ideasCount?: number;
+  draftsCount?: number;
+  scheduledCount?: number;
 }
 
-// Grouped navigation items
+// Navigation groupée et simplifiée
 const navGroups = [
   {
     label: "Général",
     items: [
       { id: 'dashboard' as AppView, label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'ideas' as AppView, label: 'Mes idées', icon: Lightbulb, showBadge: true },
     ]
   },
   {
     label: "Création",
     items: [
-      { id: 'ideas' as AppView, label: 'Générateur d\'idées', icon: Zap },
-      { id: 'posts' as AppView, label: 'Éditeur de posts', icon: FileEdit },
-      { id: 'studio' as AppView, label: 'Studio', icon: Camera },
-      { id: 'my-posts' as AppView, label: 'Mes posts', icon: FolderOpen },
+      { id: 'posts' as AppView, label: 'Nouvelle réflexion', icon: PenLine, highlight: true },
+      { id: 'free-post' as AppView, label: 'Nouveau post', icon: Edit3 },
+      { id: 'my-posts' as AppView, label: 'Mes posts', icon: FileText, showDraftsBadge: true },
     ]
   },
   {
     label: "Planification",
     items: [
-      { id: 'watch' as AppView, label: 'Veille', icon: Compass },
-      { id: 'calendar' as AppView, label: 'Calendrier', icon: Calendar },
+      { id: 'calendar' as AppView, label: 'Calendrier', icon: Calendar, showScheduledBadge: true },
+      { id: 'watch' as AppView, label: 'Veille & Actus', icon: Newspaper },
     ]
   },
   {
-    label: "Analyse",
+    label: "Performance",
     items: [
-      { id: 'metrics' as AppView, label: 'Métriques', icon: BarChart3 },
+      { id: 'analytics' as AppView, label: 'Analyse', icon: TrendingUp },
     ]
   },
   {
     label: "Compte",
     items: [
-      { id: 'settings' as AppView, label: 'Paramètres', icon: Settings },
+      { id: 'settings' as AppView, label: 'Mon profil', icon: User },
     ]
   },
 ];
 
-export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: SidebarProps) {
+export function Sidebar({ 
+  currentView, 
+  onNavigate, 
+  hasProfile, 
+  onSignOut,
+  ideasCount = 0,
+  draftsCount = 0,
+  scheduledCount = 0
+}: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -77,7 +89,7 @@ export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: Side
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-600 flex items-center justify-center shadow-glow">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
             <Sparkles className="w-5 h-5 text-primary-foreground" />
           </div>
           {!collapsed && (
@@ -90,7 +102,7 @@ export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: Side
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-4 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-5 overflow-y-auto">
         {navGroups.map((group) => (
           <div key={group.label}>
             {/* Group Label */}
@@ -104,7 +116,10 @@ export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: Side
             <div className="space-y-1">
               {group.items.map((item) => {
                 const isActive = currentView === item.id;
-                const isDisabled = !hasProfile && item.id !== 'dashboard' && item.id !== 'ideas' && item.id !== 'studio';
+                const isDisabled = !hasProfile && item.id !== 'dashboard' && item.id !== 'ideas' && item.id !== 'settings';
+                const showIdeasBadge = (item as any).showBadge && ideasCount > 0;
+                const showDrafts = (item as any).showDraftsBadge && draftsCount > 0;
+                const showScheduled = (item as any).showScheduledBadge && scheduledCount > 0;
                 
                 return (
                   <button
@@ -112,17 +127,41 @@ export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: Side
                     onClick={() => !isDisabled && onNavigate(item.id)}
                     disabled={isDisabled}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                       isActive 
-                        ? "bg-primary text-primary-foreground shadow-soft" 
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                        ? "bg-primary text-white shadow-md" 
+                        : (item as any).highlight
+                          ? "text-primary hover:bg-primary/10"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                       isDisabled && "opacity-50 cursor-not-allowed",
                       collapsed && "justify-center px-3"
                     )}
                     title={collapsed ? item.label : undefined}
                   >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
+                    <item.icon className={cn(
+                      "w-5 h-5 flex-shrink-0",
+                      (item as any).highlight && !isActive && "text-primary"
+                    )} />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {showIdeasBadge && (
+                          <Badge variant="secondary" className="h-5 px-2 text-xs bg-primary/10 text-primary">
+                            {ideasCount}
+                          </Badge>
+                        )}
+                        {showDrafts && (
+                          <Badge variant="secondary" className="h-5 px-2 text-xs">
+                            {draftsCount}
+                          </Badge>
+                        )}
+                        {showScheduled && (
+                          <Badge variant="secondary" className="h-5 px-2 text-xs bg-blue-100 text-blue-700">
+                            {scheduledCount}
+                          </Badge>
+                        )}
+                      </>
+                    )}
                   </button>
                 );
               })}
@@ -141,7 +180,7 @@ export function Sidebar({ currentView, onNavigate, hasProfile, onSignOut }: Side
           )}>
             <Circle className="w-2 h-2 fill-green-500 text-green-500 animate-pulse" />
             {!collapsed && (
-              <span className="text-xs text-green-600 font-medium">Serveur actif</span>
+              <span className="text-xs text-green-600 font-medium">Dev Mode</span>
             )}
           </div>
         )}

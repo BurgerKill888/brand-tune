@@ -7,39 +7,26 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   User, 
   Bell, 
   Shield, 
   Download, 
-  Trash2,
   LogOut,
   Mail,
-  Globe,
-  Clock,
   Linkedin,
   CheckCircle,
   XCircle,
   Building2,
-  Target,
-  Users,
-  MessageSquare,
-  Heart,
   Edit3,
   Save,
   X,
-  Plus,
-  Sparkles,
   RefreshCw,
-  AlertCircle
+  Compass,
+  Users,
+  Calendar,
+  Target,
+  Sparkles
 } from "lucide-react";
 import { BrandProfile } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -53,20 +40,107 @@ interface SettingsViewProps {
   onSaveBrandProfile?: (profile: BrandProfile) => Promise<{ error: any }>;
 }
 
-const TONE_OPTIONS = [
-  { value: 'expert', label: 'Expert', description: 'Professionnel et autoritaire' },
-  { value: 'friendly', label: 'Amical', description: 'Accessible et chaleureux' },
-  { value: 'storytelling', label: 'Storytelling', description: 'Narratif et engageant' },
-  { value: 'punchline', label: 'Punchline', description: 'Percutant et mémorable' },
-  { value: 'mixed', label: 'Mixte', description: 'Adapté au contexte' },
+// Mêmes options que l'onboarding
+const ROLE_OPTIONS = [
+  { value: 'founder', label: '🚀 Fondateur / CEO' },
+  { value: 'director', label: '👔 Dirigeant' },
+  { value: 'manager', label: '📊 Manager' },
+  { value: 'expert', label: '🎯 Expert / Consultant' },
+  { value: 'freelance', label: '💻 Freelance' },
+  { value: 'employee', label: '🧑‍💼 Salarié' },
+];
+
+const TEAM_SIZE_OPTIONS = [
+  { value: 'solo', label: 'Solo' },
+  { value: '2-10', label: '2-10 personnes' },
+  { value: '11-50', label: '11-50' },
+  { value: '51-200', label: '51-200' },
+  { value: '200+', label: '200+' },
+];
+
+const EXPERIENCE_OPTIONS = [
+  { value: 'less-1', label: 'Moins d\'1 an' },
+  { value: '1-3', label: '1 à 3 ans' },
+  { value: '3-10', label: '3 à 10 ans' },
+  { value: '10+', label: 'Plus de 10 ans' },
+];
+
+const JOURNEY_OPTIONS = [
+  { value: 'passion', label: '❤️ Une passion' },
+  { value: 'reconversion', label: '🔄 Une reconversion' },
+  { value: 'opportunity', label: '🎲 Une opportunité' },
+  { value: 'heritage', label: '👨‍👩‍👧 Un héritage familial' },
+  { value: 'necessity', label: '💪 Une nécessité' },
+  { value: 'curiosity', label: '🔍 La curiosité' },
+];
+
+const MOTIVATION_OPTIONS = [
+  { value: 'help', label: '🤝 Aider les autres' },
+  { value: 'innovate', label: '💡 Innover' },
+  { value: 'transmit', label: '📚 Transmettre' },
+  { value: 'create', label: '🎨 Créer' },
+  { value: 'solve', label: '🧩 Résoudre des problèmes' },
+  { value: 'connect', label: '🌐 Connecter les gens' },
+];
+
+const AUDIENCE_OPTIONS = [
+  { value: 'entrepreneurs', label: '🚀 Entrepreneurs' },
+  { value: 'executives', label: '👔 Dirigeants' },
+  { value: 'hr', label: '🧑‍💼 RH' },
+  { value: 'sales', label: '📈 Commerciaux' },
+  { value: 'marketers', label: '📣 Marketeurs' },
+  { value: 'developers', label: '💻 Tech / Devs' },
+  { value: 'students', label: '🎓 Étudiants' },
+  { value: 'general', label: '🌍 Grand public' },
+];
+
+const GOAL_OPTIONS = [
+  { value: 'visibility', label: '👁️ Me faire connaître' },
+  { value: 'leads', label: '🎯 Générer des leads' },
+  { value: 'recruit', label: '🤝 Recruter' },
+  { value: 'expertise', label: '📚 Partager mon expertise' },
+  { value: 'community', label: '💬 Créer une communauté' },
+  { value: 'personal-brand', label: '✨ Développer ma marque personnelle' },
 ];
 
 const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Quotidien', description: '1 post/jour' },
-  { value: '3-per-week', label: '3x/semaine', description: 'Lun, Mer, Ven' },
-  { value: '2-per-week', label: '2x/semaine', description: 'Mar, Jeu' },
-  { value: 'weekly', label: 'Hebdomadaire', description: '1 post/semaine' },
+  { value: 'weekly', label: '1x / semaine' },
+  { value: '2-per-week', label: '2x / semaine' },
+  { value: '3-per-week', label: '3x / semaine' },
+  { value: 'daily', label: 'Quotidien' },
 ];
+
+// Composant Pill réutilisable
+function Pill({ 
+  label, 
+  selected, 
+  onClick,
+  size = 'default',
+  disabled = false
+}: { 
+  label: string; 
+  selected: boolean; 
+  onClick: () => void;
+  size?: 'default' | 'small';
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "rounded-full border-2 transition-all duration-200 font-medium",
+        size === 'small' ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm",
+        selected
+          ? "border-primary bg-primary text-white shadow-md"
+          : "border-border bg-white hover:border-primary/50 hover:bg-primary/5 text-foreground",
+        disabled && "opacity-50 cursor-not-allowed"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
 
 export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandProfile }: SettingsViewProps) {
   const { toast } = useToast();
@@ -75,23 +149,20 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Form state for brand profile editing
+  // Form state pour l'édition du profil
   const [formData, setFormData] = useState({
+    firstName: '',
+    role: '',
     companyName: '',
     sector: '',
-    targets: [] as string[],
-    businessObjectives: [] as string[],
-    tone: 'expert' as BrandProfile['tone'],
-    values: [] as string[],
-    forbiddenWords: [] as string[],
-    publishingFrequency: '3-per-week' as BrandProfile['publishingFrequency'],
+    teamSize: '',
+    experience: '',
+    journey: '',
+    motivations: [] as string[],
+    audiences: [] as string[],
+    goals: [] as string[],
+    targetFrequency: '',
   });
-
-  // Temporary input states for adding items
-  const [newTarget, setNewTarget] = useState('');
-  const [newObjective, setNewObjective] = useState('');
-  const [newValue, setNewValue] = useState('');
-  const [newForbiddenWord, setNewForbiddenWord] = useState('');
 
   const [notifications, setNotifications] = useState({
     emailDigest: true,
@@ -100,18 +171,37 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
     trendAlerts: true,
   });
 
-  // Initialize form data when brand profile changes
+  // Initialiser les données du formulaire
   useEffect(() => {
     if (brandProfile) {
+      // Convertir les valeurs textuelles en codes si nécessaire
+      const motivationCodes = brandProfile.values?.map(v => {
+        const found = MOTIVATION_OPTIONS.find(o => o.label.includes(v));
+        return found?.value || v;
+      }) || [];
+
+      const audienceCodes = brandProfile.targets?.map(t => {
+        const found = AUDIENCE_OPTIONS.find(o => o.label.includes(t));
+        return found?.value || t;
+      }) || [];
+
+      const goalCodes = brandProfile.businessObjectives?.map(g => {
+        const found = GOAL_OPTIONS.find(o => o.label.includes(g));
+        return found?.value || g;
+      }) || [];
+
       setFormData({
+        firstName: brandProfile.firstName || brandProfile.companyName || '',
+        role: brandProfile.role || '',
         companyName: brandProfile.companyName || '',
         sector: brandProfile.sector || '',
-        targets: brandProfile.targets || [],
-        businessObjectives: brandProfile.businessObjectives || [],
-        tone: brandProfile.tone || 'expert',
-        values: brandProfile.values || [],
-        forbiddenWords: brandProfile.forbiddenWords || [],
-        publishingFrequency: brandProfile.publishingFrequency || '3-per-week',
+        teamSize: brandProfile.teamSize || '',
+        experience: brandProfile.experience || '',
+        journey: brandProfile.journey || '',
+        motivations: motivationCodes,
+        audiences: audienceCodes,
+        goals: goalCodes,
+        targetFrequency: brandProfile.publishingFrequency || '',
       });
     }
   }, [brandProfile]);
@@ -134,21 +224,52 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
     }
   };
 
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleArrayField = (field: string, value: string) => {
+    setFormData(prev => {
+      const current = prev[field as keyof typeof prev] as string[];
+      if (current.includes(value)) {
+        return { ...prev, [field]: current.filter(v => v !== value) };
+      } else {
+        return { ...prev, [field]: [...current, value] };
+      }
+    });
+  };
+
   const handleSaveProfile = async () => {
     if (!brandProfile || !onSaveBrandProfile) return;
 
     setIsSaving(true);
     try {
+      // Convertir les codes en labels
+      const motivationLabels = formData.motivations.map(m => 
+        MOTIVATION_OPTIONS.find(o => o.value === m)?.label.replace(/^[^\s]+\s/, '') || m
+      );
+
+      const targetLabels = formData.audiences.map(a => 
+        AUDIENCE_OPTIONS.find(o => o.value === a)?.label.replace(/^[^\s]+\s/, '') || a
+      );
+
+      const goalLabels = formData.goals.map(g => 
+        GOAL_OPTIONS.find(o => o.value === g)?.label.replace(/^[^\s]+\s/, '') || g
+      );
+
       const updatedProfile: BrandProfile = {
         ...brandProfile,
-        companyName: formData.companyName,
+        firstName: formData.firstName,
+        role: formData.role,
+        companyName: formData.companyName || formData.firstName,
         sector: formData.sector,
-        targets: formData.targets,
-        businessObjectives: formData.businessObjectives,
-        tone: formData.tone,
-        values: formData.values,
-        forbiddenWords: formData.forbiddenWords,
-        publishingFrequency: formData.publishingFrequency,
+        teamSize: formData.teamSize,
+        experience: formData.experience,
+        journey: formData.journey,
+        values: motivationLabels,
+        targets: targetLabels,
+        businessObjectives: goalLabels,
+        publishingFrequency: formData.targetFrequency as BrandProfile['publishingFrequency'],
         updatedAt: new Date(),
       };
 
@@ -174,33 +295,37 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
 
   const handleCancelEdit = () => {
     if (brandProfile) {
+      // Reset to original values
+      const motivationCodes = brandProfile.values?.map(v => {
+        const found = MOTIVATION_OPTIONS.find(o => o.label.includes(v));
+        return found?.value || v;
+      }) || [];
+
+      const audienceCodes = brandProfile.targets?.map(t => {
+        const found = AUDIENCE_OPTIONS.find(o => o.label.includes(t));
+        return found?.value || t;
+      }) || [];
+
+      const goalCodes = brandProfile.businessObjectives?.map(g => {
+        const found = GOAL_OPTIONS.find(o => o.label.includes(g));
+        return found?.value || g;
+      }) || [];
+
       setFormData({
+        firstName: brandProfile.firstName || brandProfile.companyName || '',
+        role: brandProfile.role || '',
         companyName: brandProfile.companyName || '',
         sector: brandProfile.sector || '',
-        targets: brandProfile.targets || [],
-        businessObjectives: brandProfile.businessObjectives || [],
-        tone: brandProfile.tone || 'expert',
-        values: brandProfile.values || [],
-        forbiddenWords: brandProfile.forbiddenWords || [],
-        publishingFrequency: brandProfile.publishingFrequency || '3-per-week',
+        teamSize: brandProfile.teamSize || '',
+        experience: brandProfile.experience || '',
+        journey: brandProfile.journey || '',
+        motivations: motivationCodes,
+        audiences: audienceCodes,
+        goals: goalCodes,
+        targetFrequency: brandProfile.publishingFrequency || '',
       });
     }
     setIsEditing(false);
-  };
-
-  const addToArray = (key: keyof typeof formData, value: string, setter: (v: string) => void) => {
-    if (value.trim()) {
-      const arr = formData[key] as string[];
-      if (!arr.includes(value.trim())) {
-        setFormData({ ...formData, [key]: [...arr, value.trim()] });
-      }
-      setter('');
-    }
-  };
-
-  const removeFromArray = (key: keyof typeof formData, value: string) => {
-    const arr = formData[key] as string[];
-    setFormData({ ...formData, [key]: arr.filter(v => v !== value) });
   };
 
   const handleExportData = () => {
@@ -222,7 +347,7 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `brandtune-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `truecontent-export-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
 
@@ -232,25 +357,30 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
     });
   };
 
+  // Helper pour afficher les labels
+  const getLabel = (options: {value: string; label: string}[], value: string) => {
+    return options.find(o => o.value === value)?.label || value;
+  };
+
   return (
     <div className="space-y-6 max-w-4xl animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-display font-bold text-foreground">
-          Paramètres
+          Mon Profil
         </h1>
         <p className="text-muted-foreground mt-1">
-          Gérez votre compte et votre profil de marque
+          Gérez votre profil et personnalisez votre expérience
         </p>
       </div>
 
-      {/* Brand Profile Section - Editable */}
+      {/* Brand Profile Section */}
       {brandProfile && (
         <Card className="border-border/50">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
+                <Sparkles className="w-5 h-5 text-primary" />
                 <CardTitle>Profil de Marque</CardTitle>
               </div>
               {!isEditing ? (
@@ -275,299 +405,301 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
                 </div>
               )}
             </div>
-            <CardDescription>
-              {isEditing ? "Modifiez les informations de votre entreprise" : "Votre stratégie éditoriale"}
-            </CardDescription>
           </CardHeader>
+          
           <CardContent className="space-y-6">
             {isEditing ? (
-              /* EDIT MODE */
+              /* MODE ÉDITION */
               <>
-                {/* Company Name & Sector */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Section 1: Vous */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <User className="w-4 h-4" /> Vous
+                  </h3>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="companyName" className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      Nom de l'entreprise
-                    </Label>
+                    <Label>Votre prénom</Label>
                     <Input
-                      id="companyName"
-                      value={formData.companyName}
-                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      placeholder="Votre entreprise"
+                      value={formData.firstName}
+                      onChange={(e) => updateField('firstName', e.target.value)}
+                      placeholder="Votre prénom"
+                      className="max-w-md"
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="sector" className="flex items-center gap-2">
-                      <Globe className="w-4 h-4" />
-                      Secteur d'activité
-                    </Label>
-                    <Input
-                      id="sector"
-                      value={formData.sector}
-                      onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                      placeholder="Ex: Tech, Marketing, Finance..."
-                    />
+                    <Label>Votre rôle</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {ROLE_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.role === option.value}
+                          onClick={() => updateField('role', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <Separator />
 
-                {/* Targets */}
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    Cibles / Audience
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newTarget}
-                      onChange={(e) => setNewTarget(e.target.value)}
-                      placeholder="Ex: Directeurs Marketing, CEOs..."
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addToArray('targets', newTarget, setNewTarget))}
-                    />
-                    <Button type="button" variant="secondary" onClick={() => addToArray('targets', newTarget, setNewTarget)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                {/* Section 2: Entreprise */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Building2 className="w-4 h-4" /> Entreprise
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nom de l'entreprise</Label>
+                      <Input
+                        value={formData.companyName}
+                        onChange={(e) => updateField('companyName', e.target.value)}
+                        placeholder="Mon Entreprise"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Secteur d'activité</Label>
+                      <Input
+                        value={formData.sector}
+                        onChange={(e) => updateField('sector', e.target.value)}
+                        placeholder="Ex: Marketing digital, Tech..."
+                      />
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.targets.map((target, i) => (
-                      <Badge key={i} variant="secondary" className="gap-1 pr-1">
-                        {target}
-                        <button onClick={() => removeFromArray('targets', target)} className="ml-1 hover:text-destructive">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Business Objectives */}
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Objectifs business
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newObjective}
-                      onChange={(e) => setNewObjective(e.target.value)}
-                      placeholder="Ex: Générer des leads, Notoriété..."
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addToArray('businessObjectives', newObjective, setNewObjective))}
-                    />
-                    <Button type="button" variant="secondary" onClick={() => addToArray('businessObjectives', newObjective, setNewObjective)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.businessObjectives.map((obj, i) => (
-                      <Badge key={i} variant="secondary" className="gap-1 pr-1">
-                        {obj}
-                        <button onClick={() => removeFromArray('businessObjectives', obj)} className="ml-1 hover:text-destructive">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                  <div className="space-y-2">
+                    <Label>Taille de l'équipe</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {TEAM_SIZE_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.teamSize === option.value}
+                          onClick={() => updateField('teamSize', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <Separator />
 
-                {/* Tone & Frequency */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Section 3: Parcours */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Compass className="w-4 h-4" /> Votre parcours
+                  </h3>
+                  
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Ton de communication
-                    </Label>
-                    <Select value={formData.tone} onValueChange={(v) => setFormData({ ...formData, tone: v as BrandProfile['tone'] })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TONE_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div>
-                              <span className="font-medium">{opt.label}</span>
-                              <span className="text-muted-foreground ml-2">- {opt.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Expérience dans le domaine</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {EXPERIENCE_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.experience === option.value}
+                          onClick={() => updateField('experience', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
                   </div>
+
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      Fréquence de publication
-                    </Label>
-                    <Select value={formData.publishingFrequency} onValueChange={(v) => setFormData({ ...formData, publishingFrequency: v as BrandProfile['publishingFrequency'] })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FREQUENCY_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div>
-                              <span className="font-medium">{opt.label}</span>
-                              <span className="text-muted-foreground ml-2">- {opt.description}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Ce qui vous a mené ici</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {JOURNEY_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.journey === option.value}
+                          onClick={() => updateField('journey', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Ce qui vous anime (plusieurs choix)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {MOTIVATION_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.motivations.includes(option.value)}
+                          onClick={() => toggleArrayField('motivations', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 
                 <Separator />
 
-                {/* Values */}
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <Heart className="w-4 h-4" />
-                    Valeurs de marque
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newValue}
-                      onChange={(e) => setNewValue(e.target.value)}
-                      placeholder="Ex: Innovation, Transparence, Excellence..."
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addToArray('values', newValue, setNewValue))}
-                    />
-                    <Button type="button" variant="secondary" onClick={() => addToArray('values', newValue, setNewValue)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                {/* Section 4: Audience */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Votre audience
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <Label>À qui voulez-vous parler ? (plusieurs choix)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {AUDIENCE_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.audiences.includes(option.value)}
+                          onClick={() => toggleArrayField('audiences', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.values.map((value, i) => (
-                      <Badge key={i} variant="outline" className="gap-1 pr-1 bg-primary/5">
-                        {value}
-                        <button onClick={() => removeFromArray('values', value)} className="ml-1 hover:text-destructive">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
+
+                  <div className="space-y-2">
+                    <Label>Vos objectifs LinkedIn (plusieurs choix)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {GOAL_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.goals.includes(option.value)}
+                          onClick={() => toggleArrayField('goals', option.value)}
+                          size="small"
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                {/* Forbidden Words */}
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Mots / expressions à éviter
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newForbiddenWord}
-                      onChange={(e) => setNewForbiddenWord(e.target.value)}
-                      placeholder="Ex: Révolutionnaire, Leader, Disruptif..."
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addToArray('forbiddenWords', newForbiddenWord, setNewForbiddenWord))}
-                    />
-                    <Button type="button" variant="secondary" onClick={() => addToArray('forbiddenWords', newForbiddenWord, setNewForbiddenWord)}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.forbiddenWords.map((word, i) => (
-                      <Badge key={i} variant="destructive" className="gap-1 pr-1 bg-destructive/10 text-destructive">
-                        {word}
-                        <button onClick={() => removeFromArray('forbiddenWords', word)} className="ml-1 hover:text-destructive">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                <Separator />
+
+                {/* Section 5: Rythme */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Calendar className="w-4 h-4" /> Rythme de publication
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <Label>Fréquence cible</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <Pill
+                          key={option.value}
+                          label={option.label}
+                          selected={formData.targetFrequency === option.value}
+                          onClick={() => updateField('targetFrequency', option.value)}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </>
             ) : (
-              /* VIEW MODE */
+              /* MODE LECTURE */
               <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-lg bg-secondary/30">
-                    <p className="text-xs text-muted-foreground mb-1">Entreprise</p>
-                    <p className="font-semibold text-foreground">{brandProfile.companyName}</p>
+                {/* Info principale */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/30">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
+                    {brandProfile.firstName?.charAt(0) || brandProfile.companyName?.charAt(0) || '?'}
                   </div>
-                  <div className="p-4 rounded-lg bg-secondary/30">
-                    <p className="text-xs text-muted-foreground mb-1">Secteur</p>
-                    <p className="font-semibold text-foreground">{brandProfile.sector}</p>
+                  <div>
+                    <h3 className="text-xl font-semibold text-foreground">
+                      {brandProfile.firstName || brandProfile.companyName}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {getLabel(ROLE_OPTIONS, brandProfile.role || '')} • {brandProfile.sector}
+                    </p>
+                    {brandProfile.companyName && brandProfile.firstName && (
+                      <p className="text-sm text-muted-foreground">{brandProfile.companyName}</p>
+                    )}
                   </div>
-                  <div className="p-4 rounded-lg bg-secondary/30">
-                    <p className="text-xs text-muted-foreground mb-1">Ton</p>
-                    <Badge variant="secondary">{TONE_OPTIONS.find(t => t.value === brandProfile.tone)?.label || brandProfile.tone}</Badge>
+                </div>
+
+                {/* Grille d'infos */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-secondary/30">
+                    <p className="text-xs text-muted-foreground mb-1">Équipe</p>
+                    <p className="font-medium text-foreground text-sm">
+                      {getLabel(TEAM_SIZE_OPTIONS, brandProfile.teamSize || '')}
+                    </p>
                   </div>
-                  <div className="p-4 rounded-lg bg-secondary/30">
+                  <div className="p-3 rounded-lg bg-secondary/30">
+                    <p className="text-xs text-muted-foreground mb-1">Expérience</p>
+                    <p className="font-medium text-foreground text-sm">
+                      {getLabel(EXPERIENCE_OPTIONS, brandProfile.experience || '')}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/30">
+                    <p className="text-xs text-muted-foreground mb-1">Parcours</p>
+                    <p className="font-medium text-foreground text-sm">
+                      {getLabel(JOURNEY_OPTIONS, brandProfile.journey || '')}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/30">
                     <p className="text-xs text-muted-foreground mb-1">Fréquence</p>
-                    <Badge variant="outline">{FREQUENCY_OPTIONS.find(f => f.value === brandProfile.publishingFrequency)?.label || brandProfile.publishingFrequency}</Badge>
+                    <p className="font-medium text-foreground text-sm">
+                      {getLabel(FREQUENCY_OPTIONS, brandProfile.publishingFrequency || '')}
+                    </p>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      Cibles
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {brandProfile.targets.length > 0 ? (
-                        brandProfile.targets.map((target, i) => (
-                          <Badge key={i} variant="secondary">{target}</Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">Non définies</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Objectifs
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {brandProfile.businessObjectives.length > 0 ? (
-                        brandProfile.businessObjectives.map((obj, i) => (
-                          <Badge key={i} variant="secondary">{obj}</Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">Non définis</span>
-                      )}
-                    </div>
+
+                {/* Ce qui vous anime */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" /> Ce qui vous anime
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {brandProfile.values?.length > 0 ? (
+                      brandProfile.values.map((value, i) => (
+                        <Badge key={i} variant="secondary" className="bg-primary/10 text-primary">
+                          {value}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Non défini</span>
+                    )}
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <Heart className="w-4 h-4" />
-                      Valeurs
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {brandProfile.values.length > 0 ? (
-                        brandProfile.values.map((value, i) => (
-                          <Badge key={i} variant="outline" className="bg-primary/5">{value}</Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">Non définies</span>
-                      )}
-                    </div>
+
+                {/* Audience */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Target className="w-4 h-4" /> Votre audience cible
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {brandProfile.targets?.length > 0 ? (
+                      brandProfile.targets.map((target, i) => (
+                        <Badge key={i} variant="secondary">{target}</Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Non définie</span>
+                    )}
                   </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4" />
-                      Mots à éviter
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {brandProfile.forbiddenWords.length > 0 ? (
-                        brandProfile.forbiddenWords.map((word, i) => (
-                          <Badge key={i} variant="destructive" className="bg-destructive/10 text-destructive">{word}</Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">Aucun</span>
-                      )}
-                    </div>
+                </div>
+
+                {/* Objectifs */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4" /> Vos objectifs LinkedIn
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {brandProfile.businessObjectives?.length > 0 ? (
+                      brandProfile.businessObjectives.map((obj, i) => (
+                        <Badge key={i} variant="outline" className="bg-secondary/50">{obj}</Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Non définis</span>
+                    )}
                   </div>
                 </div>
               </>
@@ -600,7 +732,7 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-teal-600 flex items-center justify-center text-2xl font-bold text-primary-foreground">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-2xl font-bold text-white">
               {userEmail?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div>
@@ -647,7 +779,7 @@ export function SettingsView({ brandProfile, onSignOut, userEmail, onSaveBrandPr
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={linkedin.profile.picture} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
+                    <AvatarFallback className="bg-primary text-white">
                       {linkedin.profile.name?.charAt(0) || 'L'}
                     </AvatarFallback>
                   </Avatar>

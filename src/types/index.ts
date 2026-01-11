@@ -14,6 +14,12 @@ export interface BrandProfile {
   publishingFrequency: 'daily' | '3-per-week' | '2-per-week' | 'weekly';
   kpis: string[];
   editorialCharter: EditorialCharter;
+  // Nouveaux champs contextuels
+  firstName?: string;
+  role?: string;
+  teamSize?: string;
+  experience?: string;
+  journey?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,7 +85,23 @@ export interface OnboardingStep {
   completed: boolean;
 }
 
-export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'my-posts' | 'metrics' | 'settings' | 'ideas' | 'studio';
+export type AppView = 'dashboard' | 'onboarding' | 'watch' | 'calendar' | 'posts' | 'free-post' | 'my-posts' | 'metrics' | 'settings' | 'ideas' | 'analytics';
+
+// Idée capturée
+export interface CapturedIdea {
+  id: string;
+  title: string;
+  hook: string;
+  source?: string;
+  createdAt: string;
+  developed?: boolean;
+}
+
+// Données pré-remplies pour l'éditeur
+export interface PrefillPostData {
+  topic: string;
+  category?: string;
+}
 
 export interface SavedInspiration {
   id: string;

@@ -10,7 +10,8 @@ import {
   BarChart3,
   LogOut,
   Lightbulb,
-  Zap
+  Zap,
+  FolderOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,8 @@ const navItems = [
   { id: 'inspiration' as AppView, label: 'Inspiration', icon: Lightbulb },
   { id: 'watch' as AppView, label: 'Veille', icon: Compass },
   { id: 'calendar' as AppView, label: 'Calendrier', icon: Calendar },
-  { id: 'posts' as AppView, label: 'Posts', icon: FileEdit },
+  { id: 'posts' as AppView, label: 'Éditeur', icon: FileEdit },
+  { id: 'my-posts' as AppView, label: 'Mes posts', icon: FolderOpen },
   { id: 'metrics' as AppView, label: 'Métriques', icon: BarChart3 },
   { id: 'settings' as AppView, label: 'Paramètres', icon: Settings },
 ];

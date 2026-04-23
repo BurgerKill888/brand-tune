@@ -138,10 +138,17 @@ export function usePosts(brandProfileId?: string) {
     }
   };
 
+  const updatePost = async (id: string, updates: Partial<Post>) => {
+    const existing = posts.find((p) => p.id === id);
+    if (!existing) return { error: new Error('Post not found') };
+    return savePost({ ...existing, ...updates, updatedAt: new Date() });
+  };
+
   return {
     posts,
     loading,
     savePost,
+    updatePost,
     deletePost,
     refreshPosts: fetchPosts,
   };

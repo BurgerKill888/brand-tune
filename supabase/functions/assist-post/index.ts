@@ -178,8 +178,9 @@ Tu ne fais JAMAIS de réponse explicative, tu donnes UNIQUEMENT le post demandé
 
   } catch (error) {
     console.error('Error in assist-post function:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

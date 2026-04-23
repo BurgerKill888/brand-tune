@@ -74,6 +74,8 @@ export interface Post {
   keywords: string[];
   hashtags: string[];
   status: 'draft' | 'ready' | 'published';
+  type?: string;
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }

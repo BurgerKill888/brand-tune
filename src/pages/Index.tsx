@@ -11,8 +11,8 @@ import { SettingsView } from "@/components/views/SettingsView";
 import { IdeasView } from "@/components/views/IdeasView";
 import { FreePostView } from "@/components/views/FreePostView";
 import { AnalyticsView } from "@/components/views/AnalyticsView";
-import { AuthForm } from "@/components/auth/AuthForm";
 import { useAppStore } from "@/store/appStore";
+import { supabase } from "@/integrations/supabase/client";
 import { AppView, BrandProfile, Post } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -60,13 +60,15 @@ const Index = () => {
     setScheduledCount(scheduled.length);
   }, [posts, scheduledPosts]);
 
-  // Show auth form if not authenticated
-  if (!authLoading && !user) {
-    return <AuthForm />;
-  }
+  // Auto sign-in anonymously if no user
+  useEffect(() => {
+    if (!authLoading && !user) {
+      supabase.auth.signInAnonymously();
+    }
+  }, [authLoading, user]);
 
   // Show loading state
-  if (authLoading || profileLoading) {
+  if (authLoading || profileLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">

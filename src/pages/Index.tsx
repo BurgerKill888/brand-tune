@@ -159,6 +159,33 @@ const Index = () => {
     setCurrentView('posts');
   };
 
+  // Profil de secours si aucun n'est configuré, pour permettre l'usage immédiat
+  const effectiveProfile: BrandProfile = brandProfile || {
+    id: 'default',
+    userId: user?.id || 'anon',
+    companyName: 'Mon profil',
+    sector: 'général',
+    targets: [],
+    businessObjectives: [],
+    tone: 'mixed',
+    values: [],
+    forbiddenWords: [],
+    examplePosts: [],
+    publishingFrequency: 'weekly',
+    kpis: [],
+    editorialCharter: {
+      audience: '',
+      positioning: '',
+      tone: '',
+      doList: [],
+      dontList: [],
+      kpis: [],
+      writingStyle: '',
+    },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
   const renderView = () => {
     if (showOnboarding) {
       return <OnboardingView onComplete={handleCompleteOnboarding} />;
@@ -184,27 +211,27 @@ const Index = () => {
           />
         );
       case 'watch':
-        return brandProfile ? (
+        return (
           <WatchView
-            brandProfile={brandProfile}
+            brandProfile={effectiveProfile}
             items={watchItems}
             onSaveItems={saveWatchItems}
             onNavigate={(view) => setCurrentView(view)}
           />
-        ) : null;
+        );
       case 'calendar':
-        return brandProfile ? (
+        return (
           <CalendarView
-            brandProfile={brandProfile}
+            brandProfile={effectiveProfile}
             calendarItems={calendarItems}
             onAddCalendarItem={() => {}}
             onSaveItems={saveCalendarItems}
           />
-        ) : null;
+        );
       case 'posts':
-        return brandProfile ? (
+        return (
           <PostsView
-            brandProfile={brandProfile}
+            brandProfile={effectiveProfile}
             posts={posts}
             onSavePost={handleSavePost}
             onUpdatePost={handleUpdatePost}
@@ -212,16 +239,16 @@ const Index = () => {
             onPublishPost={async () => {}}
             onNavigateToCalendar={() => setCurrentView('calendar')}
           />
-        ) : null;
+        );
       case 'free-post':
-        return brandProfile ? (
+        return (
           <FreePostView
-            brandProfile={brandProfile}
+            brandProfile={effectiveProfile}
             onSavePost={handleSavePost}
           />
-        ) : null;
+        );
       case 'my-posts':
-        return brandProfile ? (
+        return (
           <MyPostsView
             posts={posts}
             onCreatePost={() => setCurrentView('posts')}
@@ -230,11 +257,11 @@ const Index = () => {
             onUpdatePost={handleUpdatePost}
             onToggleFavorite={handleToggleFavorite}
             favorites={favoritePostIds}
-            brandProfileId={brandProfile.id}
-            authorName={brandProfile.companyName}
-            authorTitle={`Expert ${brandProfile.sector}`}
+            brandProfileId={effectiveProfile.id}
+            authorName={effectiveProfile.companyName}
+            authorTitle={`Expert ${effectiveProfile.sector}`}
           />
-        ) : null;
+        );
       case 'metrics':
         return (
           <MetricsView

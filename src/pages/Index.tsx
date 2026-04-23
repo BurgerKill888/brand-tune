@@ -96,16 +96,6 @@ const Index = () => {
   };
 
   const handleNavigate = (view: AppView) => {
-    // Allow access to some views without a profile
-    const publicViews = ['dashboard', 'settings', 'ideas'];
-    if (!brandProfile && !publicViews.includes(view)) {
-      toast({
-        title: "Configuration requise",
-        description: "Veuillez d'abord configurer votre profil éditorial.",
-        variant: "destructive",
-      });
-      return;
-    }
     setCurrentView(view);
   };
 

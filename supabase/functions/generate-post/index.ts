@@ -25,287 +25,78 @@ interface GeneratePostRequest {
   includeCta: boolean;
 }
 
-// Logique de structure selon le type de post
 const getPostStructure = (postType: string, postCategory: string): string => {
   const structures: Record<string, Record<string, string>> = {
     instructif: {
       explication: `STRUCTURE ÉDUCATIVE:
-1. Hook: Pose une question ou un constat surprenant
-2. Contexte: Explique le "pourquoi" en 2-3 lignes
-3. Développement: 3-5 points clés numérotés ou avec bullets
-4. Conclusion: Synthèse actionnable
-5. CTA: Question ouverte pour engager la discussion`,
-      conseil: `STRUCTURE CONSEIL PRATIQUE:
-1. Hook: "Voici comment..." ou "La méthode pour..."
-2. Le problème commun que les gens rencontrent
-3. La solution en étapes claires (numérotées)
-4. Un exemple concret d'application
-5. CTA: Invite à partager leur expérience`,
-      tendance: `STRUCTURE TENDANCE:
-1. Hook: Chiffre ou statistique frappante
-2. Explication de la tendance
-3. Impact sur le secteur/métier
-4. Comment s'y adapter
-5. CTA: Demande leur avis sur cette évolution`,
-      'cas-etude': `STRUCTURE CAS D'ÉTUDE:
-1. Hook: Résultat impressionnant obtenu
-2. Contexte: La situation de départ
-3. Le défi rencontré
-4. La solution mise en place
-5. Les résultats chiffrés
-6. CTA: Question sur leur expérience similaire`,
-      annonce: `STRUCTURE ANNONCE:
-1. Hook: Nouvelle excitante à partager
-2. Le contexte et pourquoi c'est important
-3. Les détails clés
-4. Ce que ça change pour l'audience
-5. CTA: Action concrète (lien, inscription, etc.)`
+1. Hook: Question ou constat surprenant
+2. Contexte en 2-3 lignes
+3. 3-5 points clés numérotés
+4. Synthèse actionnable
+5. CTA: Question ouverte`,
+      conseil: `STRUCTURE CONSEIL: Hook "Voici comment...", problème, solution en étapes, exemple concret, CTA partage.`,
+      tendance: `STRUCTURE TENDANCE: Hook chiffré, explication, impact, adaptation, CTA avis.`,
+      'cas-etude': `STRUCTURE CAS D'ÉTUDE: Hook résultat, contexte, défi, solution, résultats chiffrés, CTA.`,
+      annonce: `STRUCTURE ANNONCE: Hook nouvelle, contexte, détails, impact audience, CTA action.`
     },
     inspirant: {
-      explication: `STRUCTURE INSPIRATION ANALYTIQUE:
-1. Hook: Citation ou observation profonde
-2. Réflexion personnelle sur le sujet
-3. Leçon tirée de l'expérience
-4. Comment appliquer cette sagesse
-5. CTA: Inviter au partage d'expérience`,
-      conseil: `STRUCTURE INSPIRATION PRATIQUE:
-1. Hook: Moment de prise de conscience
-2. Ce que j'ai appris
-3. Le conseil qui en découle
-4. Pourquoi ça fonctionne
-5. CTA: Encourager à essayer`,
-      tendance: `STRUCTURE VISION INSPIRANTE:
-1. Hook: Vision du futur
-2. Les signaux faibles observés
-3. Pourquoi c'est enthousiasmant
-4. Comment se préparer
-5. CTA: Partager leur vision`,
-      'cas-etude': `STRUCTURE HISTOIRE INSPIRANTE:
-1. Hook: Le moment décisif
-2. Le contexte et les obstacles
-3. La décision courageuse
-4. La transformation
-5. La leçon universelle
-6. CTA: Leur moment similaire`,
-      annonce: `STRUCTURE ANNONCE INSPIRANTE:
-1. Hook: Le rêve qui devient réalité
-2. Le chemin parcouru
-3. Ce que ça représente
-4. La vision pour la suite
-5. CTA: Rejoindre l'aventure`
+      explication: `STRUCTURE INSPIRATION: Citation, réflexion, leçon, application, CTA partage.`,
+      conseil: `STRUCTURE INSPIRATION PRATIQUE: Prise de conscience, apprentissage, conseil, pourquoi, CTA.`,
+      tendance: `STRUCTURE VISION: Vision futur, signaux faibles, enthousiasme, préparation, CTA vision.`,
+      'cas-etude': `STRUCTURE HISTOIRE INSPIRANTE: Moment décisif, contexte, décision, transformation, leçon, CTA.`,
+      annonce: `STRUCTURE ANNONCE INSPIRANTE: Rêve réalisé, chemin, signification, vision suite, CTA.`
     },
     promotionnel: {
-      explication: `STRUCTURE PROMO ÉDUCATIVE:
-1. Hook: Problème que l'audience connaît
-2. Pourquoi ce problème persiste
-3. Notre approche/solution unique
-4. Preuve sociale ou résultat
-5. CTA: Découvrir l'offre`,
-      conseil: `STRUCTURE PROMO CONSEIL:
-1. Hook: Conseil gratuit de valeur
-2. Développement du conseil
-3. Lien subtil avec notre expertise
-4. Offre pour aller plus loin
-5. CTA: Passage à l'action`,
-      tendance: `STRUCTURE PROMO TENDANCE:
-1. Hook: Tendance majeure du secteur
-2. Notre positionnement sur cette tendance
-3. Ce que nous proposons
-4. Témoignage ou preuve
-5. CTA: En savoir plus`,
-      'cas-etude': `STRUCTURE PROMO CAS CLIENT:
-1. Hook: Résultat client impressionnant
-2. Situation initiale du client
-3. Notre intervention
-4. Résultats détaillés
-5. CTA: Obtenir les mêmes résultats`,
-      annonce: `STRUCTURE LANCEMENT:
-1. Hook: Grande nouvelle
-2. Ce que nous lançons
-3. Pourquoi c'est unique
-4. Offre de lancement
-5. CTA: Profiter de l'offre`
+      explication: `STRUCTURE PROMO ÉDUCATIVE: Problème, persistance, solution unique, preuve, CTA offre.`,
+      conseil: `STRUCTURE PROMO CONSEIL: Conseil gratuit, développement, lien expertise, offre, CTA.`,
+      tendance: `STRUCTURE PROMO TENDANCE: Tendance, positionnement, proposition, témoignage, CTA.`,
+      'cas-etude': `STRUCTURE PROMO CAS CLIENT: Résultat, situation, intervention, résultats, CTA.`,
+      annonce: `STRUCTURE LANCEMENT: Nouvelle, lancement, unicité, offre, CTA.`
     },
     storytelling: {
-      explication: `STRUCTURE HISTOIRE EXPLICATIVE:
-1. Hook: "Il y a [temps], je..."
-2. Le contexte de l'histoire
-3. Le problème rencontré
-4. La révélation/apprentissage
-5. La leçon à retenir
-6. CTA: Leur histoire similaire`,
-      conseil: `STRUCTURE HISTOIRE CONSEIL:
-1. Hook: Erreur que j'ai faite
-2. Ce qui s'est passé
-3. Comment j'ai corrigé
-4. Le conseil qui en découle
-5. CTA: Leurs erreurs transformées`,
-      tendance: `STRUCTURE HISTOIRE TENDANCE:
-1. Hook: Ce que j'ai observé récemment
-2. L'anecdote révélatrice
-3. Ce que ça dit de notre époque
-4. Comment je m'adapte
-5. CTA: Leurs observations`,
-      'cas-etude': `STRUCTURE HISTOIRE COMPLÈTE:
-1. Hook: Le moment où tout a changé
-2. Acte 1: La situation initiale
-3. Acte 2: Le défi et la lutte
-4. Acte 3: La résolution
-5. La morale de l'histoire
-6. CTA: Leur propre histoire`,
-      annonce: `STRUCTURE HISTOIRE D'ANNONCE:
-1. Hook: Comment cette idée est née
-2. Le chemin de création
-3. Les obstacles surmontés
-4. L'aboutissement
-5. CTA: Faire partie de la suite`
+      explication: `STRUCTURE HISTOIRE: "Il y a X temps...", contexte, problème, révélation, leçon, CTA.`,
+      conseil: `STRUCTURE HISTOIRE CONSEIL: Erreur, déroulement, correction, conseil, CTA.`,
+      tendance: `STRUCTURE HISTOIRE TENDANCE: Observation, anecdote, époque, adaptation, CTA.`,
+      'cas-etude': `STRUCTURE HISTOIRE COMPLÈTE: Moment-clé, situation, défi, résolution, morale, CTA.`,
+      annonce: `STRUCTURE HISTOIRE ANNONCE: Naissance idée, création, obstacles, aboutissement, CTA.`
     },
     engagement: {
-      explication: `STRUCTURE DÉBAT:
-1. Hook: Question polarisante
-2. Les deux points de vue
-3. Ton opinion nuancée
-4. CTA: Demander leur avis`,
-      conseil: `STRUCTURE SONDAGE:
-1. Hook: Dilemme courant
-2. Les options possibles
-3. Avantages/inconvénients
-4. CTA: Quel est ton choix?`,
-      tendance: `STRUCTURE DISCUSSION TENDANCE:
-1. Hook: Tendance controversée
-2. Les pour et les contre
-3. Ta position
-4. CTA: D'accord ou pas?`,
-      'cas-etude': `STRUCTURE QUIZ/DÉFI:
-1. Hook: Situation à analyser
-2. Les éléments du cas
-3. Les options de réponse
-4. CTA: Quelle décision prendrais-tu?`,
-      annonce: `STRUCTURE ANNONCE PARTICIPATIVE:
-1. Hook: On a besoin de vous
-2. Ce qu'on prépare
-3. Comment participer
-4. CTA: Action immédiate`
+      explication: `STRUCTURE DÉBAT: Question polarisante, deux points de vue, opinion nuancée, CTA avis.`,
+      conseil: `STRUCTURE SONDAGE: Dilemme, options, avantages/inconvénients, CTA choix.`,
+      tendance: `STRUCTURE DISCUSSION: Tendance controversée, pour/contre, position, CTA.`,
+      'cas-etude': `STRUCTURE QUIZ: Situation, éléments, options, CTA décision.`,
+      annonce: `STRUCTURE PARTICIPATIVE: Besoin, projet, participation, CTA action.`
     }
   };
-
   return structures[postType]?.[postCategory] || structures.instructif.explication;
 };
 
-// Logique des emojis
-const getEmojiGuidance = (emojiStyle: string): string => {
-  const guidance: Record<string, string> = {
-    adapte: `EMOJIS - USAGE ADAPTÉ:
-- Utilise 3-5 emojis stratégiquement placés
-- 1 emoji dans le hook pour attirer l'attention
-- 1-2 emojis pour les points clés
-- 1 emoji pour le CTA
-- Choisis des emojis professionnels: ✅ 💡 🎯 📈 🚀 💪 ⚡ 🔑 📌`,
-    beaucoup: `EMOJIS - USAGE GÉNÉREUX:
-- Utilise 6-10 emojis tout au long du post
-- Chaque point ou paragraphe peut avoir son emoji
-- Emoji au début de chaque bullet point
-- Emojis expressifs autorisés: 🔥 ❤️ 😊 🙌 ✨ 💥`,
-    peu: `EMOJIS - USAGE MINIMAL:
-- Maximum 2 emojis dans tout le post
-- 1 dans le hook si pertinent
-- 1 pour le CTA éventuellement
-- Seulement des emojis sobres: ✅ 📌 💡`,
-    aucun: `EMOJIS - AUCUN:
-- N'utilise AUCUN emoji dans le post
-- Style professionnel et sobre
-- Mise en forme par le texte uniquement (sauts de ligne, tirets, numéros)`
-  };
-  return guidance[emojiStyle] || guidance.adapte;
-};
+const getEmojiGuidance = (s: string) => ({
+  adapte: 'EMOJIS: 3-5 emojis stratégiques (✅ 💡 🎯 📈 🚀).',
+  beaucoup: 'EMOJIS: 6-10 emojis expressifs tout au long.',
+  peu: 'EMOJIS: Maximum 2 emojis sobres.',
+  aucun: 'EMOJIS: Aucun emoji, style sobre.'
+} as Record<string,string>)[s] || 'EMOJIS: 3-5 emojis adaptés.';
 
-// Logique du registre
-const getRegistreGuidance = (registre: string): string => {
-  const guidance: Record<string, string> = {
-    tutoiement: `REGISTRE - TUTOIEMENT:
-- Utilise "tu", "toi", "ton", "ta", "tes"
-- Ton direct et proche
-- Crée une connexion personnelle
-- Ex: "Tu veux progresser?", "Voici ce que tu dois savoir"`,
-    vouvoiement: `REGISTRE - VOUVOIEMENT:
-- Utilise "vous", "votre", "vos"
-- Ton respectueux et professionnel
-- Distance appropriée pour le B2B
-- Ex: "Vous souhaitez améliorer?", "Voici ce que vous devez retenir"`
-  };
-  return guidance[registre] || guidance.vouvoiement;
-};
+const getRegistreGuidance = (r: string) =>
+  r === 'tutoiement' ? 'REGISTRE: Tutoiement (tu, toi, ton).' : 'REGISTRE: Vouvoiement (vous, votre).';
 
-// Logique de la langue
-const getLangueGuidance = (langue: string): string => {
-  const guidance: Record<string, string> = {
-    francais: `LANGUE - FRANÇAIS:
-- Rédige intégralement en français
-- Utilise un français professionnel mais accessible
-- Évite les anglicismes sauf s'ils sont courants dans le secteur
-- Hashtags en français quand possible`,
-    anglais: `LANGUE - ENGLISH:
-- Write entirely in English
-- Use professional but accessible language
-- Suitable for international LinkedIn audience
-- Hashtags in English`
-  };
-  return guidance[langue] || guidance.francais;
-};
+const getLangueGuidance = (l: string) =>
+  l === 'anglais' ? 'LANGUE: Write entirely in English, professional tone.' : 'LANGUE: Rédige en français professionnel.';
 
-// Logique de longueur
-const getLengthGuidance = (length: string): string => {
-  const guidance: Record<string, string> = {
-    short: `LONGUEUR - COURT (300-500 caractères):
-- Post percutant et direct
-- 1-2 paragraphes maximum
-- Idéal pour les messages forts
-- Hook + Message clé + CTA`,
-    medium: `LONGUEUR - MOYEN (600-1200 caractères):
-- Post développé mais concis
-- 3-4 paragraphes
-- Permet d'argumenter
-- Structure classique LinkedIn`,
-    long: `LONGUEUR - LONG (1300-2500 caractères):
-- Post approfondi
-- 5-6 paragraphes
-- Idéal pour storytelling ou analyses
-- Utilise le format "See more" à ton avantage`
-  };
-  return guidance[length] || guidance.medium;
-};
+const getLengthGuidance = (l: string) => ({
+  short: 'LONGUEUR: 300-500 caractères, percutant.',
+  medium: 'LONGUEUR: 600-1200 caractères, 3-4 paragraphes.',
+  long: 'LONGUEUR: 1300-2500 caractères, approfondi.'
+} as Record<string,string>)[l] || 'LONGUEUR: 600-1200 caractères.';
 
-// Logique du type de post
-const getPostTypeGuidance = (postType: string): string => {
-  const guidance: Record<string, string> = {
-    instructif: `TYPE - INSTRUCTIF:
-- Objectif: Éduquer et informer
-- Apporte une vraie valeur ajoutée
-- Montre ton expertise
-- Donne des informations actionnables`,
-    inspirant: `TYPE - INSPIRANT:
-- Objectif: Motiver et élever
-- Partage une vision ou des valeurs
-- Connecte émotionnellement
-- Pousse à l'action positive`,
-    promotionnel: `TYPE - PROMOTIONNEL:
-- Objectif: Convertir subtilement
-- 80% valeur, 20% promotion
-- Preuve sociale importante
-- CTA clair mais pas agressif`,
-    storytelling: `TYPE - STORYTELLING:
-- Objectif: Créer une connexion
-- Utilise la structure narrative (début, milieu, fin)
-- Inclus des détails concrets
-- Finis par une leçon universelle`,
-    engagement: `TYPE - ENGAGEMENT:
-- Objectif: Générer des interactions
-- Pose des questions
-- Crée un débat constructif
-- Invite explicitement à commenter`
-  };
-  return guidance[postType] || guidance.instructif;
-};
+const getPostTypeGuidance = (t: string) => ({
+  instructif: 'TYPE: Éduquer, apporter de la valeur, montrer expertise.',
+  inspirant: 'TYPE: Motiver, partager vision, connecter émotionnellement.',
+  promotionnel: 'TYPE: Convertir subtilement, 80% valeur 20% promo.',
+  storytelling: 'TYPE: Créer connexion via narration (début, milieu, fin).',
+  engagement: 'TYPE: Générer interactions, questions, débat.'
+} as Record<string,string>)[t] || 'TYPE: Éduquer.';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -314,134 +105,112 @@ serve(async (req) => {
 
   try {
     const requestData: GeneratePostRequest = await req.json();
-    const { 
-      topic, 
-      length = 'medium', 
+    const {
+      topic,
+      length = 'medium',
       postType = 'instructif',
       postCategory = 'explication',
       emojiStyle = 'adapte',
       registre = 'vouvoiement',
       langue = 'francais',
-      brandProfile, 
-      includeCta = true 
+      brandProfile,
+      includeCta = true
     } = requestData;
 
-    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
-    
-    if (!ANTHROPIC_API_KEY) {
-      throw new Error("ANTHROPIC_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Construction du prompt avec toute la logique
     const systemPrompt = `Tu es un expert en création de contenu LinkedIn avec plus de 10 ans d'expérience.
-Tu crées des posts qui génèrent de l'engagement, de la crédibilité et des opportunités business.
 
 ═══════════════════════════════════════════════════════════
-PROFIL DE MARQUE À RESPECTER ABSOLUMENT
+PROFIL DE MARQUE À RESPECTER
 ═══════════════════════════════════════════════════════════
 🏢 Entreprise: ${brandProfile.companyName}
 📊 Secteur: ${brandProfile.sector}
 🎯 Cibles: ${brandProfile.targets.join(', ')}
-💼 Objectifs business: ${brandProfile.businessObjectives.join(', ')}
+💼 Objectifs: ${brandProfile.businessObjectives.join(', ')}
 💎 Valeurs: ${brandProfile.values.join(', ')}
-🎨 Ton de marque: ${brandProfile.tone}
-🚫 Mots/expressions INTERDITS: ${brandProfile.forbiddenWords.length > 0 ? brandProfile.forbiddenWords.join(', ') : 'Aucun'}
+🎨 Ton: ${brandProfile.tone}
+🚫 Mots INTERDITS: ${brandProfile.forbiddenWords.length > 0 ? brandProfile.forbiddenWords.join(', ') : 'Aucun'}
 
 ═══════════════════════════════════════════════════════════
-PARAMÈTRES DE GÉNÉRATION
+PARAMÈTRES
 ═══════════════════════════════════════════════════════════
-
 ${getPostTypeGuidance(postType)}
-
 ${getPostStructure(postType, postCategory)}
-
 ${getLengthGuidance(length)}
-
 ${getEmojiGuidance(emojiStyle)}
-
 ${getRegistreGuidance(registre)}
-
 ${getLangueGuidance(langue)}
 
 ═══════════════════════════════════════════════════════════
-RÈGLES LINKEDIN OBLIGATOIRES
+RÈGLES LINKEDIN
 ═══════════════════════════════════════════════════════════
-1. HOOK PUISSANT: Les 2 premières lignes sont cruciales (avant le "...voir plus")
-2. AÉRATION: Sauts de ligne entre chaque idée (max 2-3 lignes par paragraphe)
-3. LISIBILITÉ: Phrases courtes, langage clair
-4. AUTHENTICITÉ: Évite le jargon corporate vide de sens
-5. ${includeCta ? 'CTA ENGAGEANT: Termine par une question ouverte ou un appel à l\'action' : 'Pas de CTA explicite'}
-6. HASHTAGS: 3-5 hashtags pertinents à la fin, jamais dans le corps du texte
+1. HOOK PUISSANT (2 premières lignes)
+2. AÉRATION: sauts de ligne, paragraphes courts
+3. Phrases courtes, langage clair
+4. Évite jargon corporate vide
+5. ${includeCta ? 'CTA engageant à la fin' : 'Pas de CTA explicite'}
+6. 3-5 hashtags pertinents à la fin uniquement
 
-═══════════════════════════════════════════════════════════
-FORMAT DE RÉPONSE (JSON STRICT)
-═══════════════════════════════════════════════════════════
+FORMAT DE RÉPONSE (JSON STRICT, aucun texte avant/après):
 {
-  "content": "Le post LinkedIn complet, prêt à être publié",
-  "variants": [
-    "Variante alternative du hook #1",
-    "Variante alternative du hook #2"
-  ],
-  "suggestions": [
-    "Suggestion d'amélioration #1",
-    "Suggestion d'amélioration #2"
-  ],
+  "content": "Le post LinkedIn complet",
+  "variants": ["Variante hook 1", "Variante hook 2"],
+  "suggestions": ["Amélioration 1", "Amélioration 2"],
   "readabilityScore": 85,
-  "editorialJustification": "Explication de comment ce post respecte la charte éditoriale et pourquoi il devrait performer",
-  "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
-  "keywords": ["mot-clé1", "mot-clé2", "mot-clé3"]
+  "editorialJustification": "Pourquoi ce post performe",
+  "hashtags": ["hashtag1", "hashtag2"],
+  "keywords": ["mot1", "mot2"]
 }`;
 
-    const userMessage = langue === 'anglais' 
-      ? `Create a LinkedIn post about: "${topic}"`
-      : `Crée un post LinkedIn sur le thème: "${topic}"`;
+    const userMessage = langue === 'anglais'
+      ? `Create a LinkedIn post about: "${topic}". Respond ONLY with valid JSON.`
+      : `Crée un post LinkedIn sur le thème: "${topic}". Réponds UNIQUEMENT avec un JSON valide.`;
 
-    console.log("Generating post with Claude for topic:", topic);
-    console.log("Parameters:", { postType, postCategory, emojiStyle, registre, langue, length });
+    console.log("Generating post via Lovable AI for topic:", topic);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
+        model: "google/gemini-2.5-flash",
         messages: [
+          { role: "system", content: systemPrompt },
           { role: "user", content: userMessage }
         ],
-        system: systemPrompt,
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Anthropic API error:", response.status, errorText);
-      
+      console.error("Lovable AI error:", response.status, errorText);
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Limite de requêtes atteinte. Réessayez dans quelques instants." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 401) {
-        return new Response(JSON.stringify({ error: "Clé API Anthropic invalide ou expirée." }), {
-          status: 401,
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Crédits Lovable AI épuisés. Ajoutez des crédits dans les paramètres." }), {
+          status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`Erreur API Anthropic: ${response.status}`);
+      throw new Error(`Erreur Lovable AI: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.content?.[0]?.text;
-    
-    console.log("Raw Claude response received");
+    const content = data.choices?.[0]?.message?.content;
+    console.log("Raw AI response received");
 
-    // Parse the JSON response
     let postData;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -463,7 +232,6 @@ FORMAT DE RÉPONSE (JSON STRICT)
       };
     }
 
-    // Validation et nettoyage
     postData.content = postData.content || '';
     postData.variants = Array.isArray(postData.variants) ? postData.variants : [];
     postData.suggestions = Array.isArray(postData.suggestions) ? postData.suggestions : [];

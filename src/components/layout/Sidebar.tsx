@@ -116,7 +116,7 @@ export function Sidebar({
             <div className="space-y-1">
               {group.items.map((item) => {
                 const isActive = currentView === item.id;
-                const isDisabled = !hasProfile && item.id !== 'dashboard' && item.id !== 'ideas' && item.id !== 'settings';
+                const isDisabled = false;
                 const showIdeasBadge = (item as any).showBadge && ideasCount > 0;
                 const showDrafts = (item as any).showDraftsBadge && draftsCount > 0;
                 const showScheduled = (item as any).showScheduledBadge && scheduledCount > 0;

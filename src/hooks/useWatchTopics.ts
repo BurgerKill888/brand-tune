@@ -14,7 +14,7 @@ export function useWatchTopics(userId: string | undefined, brandProfileId: strin
     if (!userId) return;
 
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabase.from as any)
         .from('watch_topics')
         .select('*')
         .eq('user_id', userId)
@@ -51,7 +51,7 @@ export function useWatchTopics(userId: string | undefined, brandProfileId: strin
     if (!userId) return;
 
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabase.from as any)
         .from('watch_history')
         .select('*')
         .eq('user_id', userId)
@@ -83,7 +83,7 @@ export function useWatchTopics(userId: string | undefined, brandProfileId: strin
 
     setIsLoading(true);
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (supabase.from as any)
         .from('watch_topics')
         .insert({
           user_id: userId,
@@ -144,7 +144,7 @@ export function useWatchTopics(userId: string | undefined, brandProfileId: strin
       if (updates.objectiveFilter !== undefined) updateData.objective_filter = updates.objectiveFilter;
       if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
 
-      const { error } = await (supabase as any)
+      const { error } = await (supabase.from as any)
         .from('watch_topics')
         .update(updateData)
         .eq('id', id)
@@ -179,7 +179,7 @@ export function useWatchTopics(userId: string | undefined, brandProfileId: strin
 
     setIsLoading(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await (supabase.from as any)
         .from('watch_topics')
         .delete()
         .eq('id', id)
@@ -213,7 +213,7 @@ export function useWatchTopics(userId: string | undefined, brandProfileId: strin
     if (!userId) return { error: 'User not authenticated' };
 
     try {
-      const { error } = await (supabase as any)
+      const { error } = await (supabase.from as any)
         .from('watch_history')
         .insert({
           user_id: userId,
